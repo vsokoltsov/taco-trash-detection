@@ -1,75 +1,121 @@
 # Trash Annotations in Context
 
-This project is implementation of service for detection of trash and litter based on its image
+This project explores trash and litter detection using the [TACO dataset](https://github.com/pedropro/TACO) and instance detection/segmentation models.
 
-## 🔗Useful links
+The work is implemented primarily in Jupyter notebooks and focuses on evaluating how well different model and label configurations detect litter in real-world images.
 
-* [Official website](http://tacodataset.org/)
-* [Paper](https://arxiv.org/pdf/2003.06975)
-* [Dataset + implementation](https://github.com/pedropro/TACO)
+This repository was prepared as the final project for the [Deep Learning School](https://dls.samcs.ru/) [Computer Vision course](https://dls.samcs.ru/part1). The course covers computer-vision topics including convolutional neural networks, image segmentation, and object detection.
 
-## ❓Problem statement
+## 🔗 Useful Links
 
-Litter and polution is a world-wide problem. Every year more and more square meters are becoming inhabitat and poison water and soil. At the same time, in the city environment it might be complicated to quickly determine the litter. Could machine learning and computer vision models help solving this environmental hazard?
+- [TACO dataset website](http://tacodataset.org/)
+- [TACO paper](https://arxiv.org/pdf/2003.06975)
+- [Dataset and original implementation](https://github.com/pedropro/TACO)
+- [Deep Learning School](https://dls.samcs.ru/)
+- [Deep Learning School Computer Vision course](https://dls.samcs.ru/part1)
+- [TorchMetrics mAP documentation](https://lightning.ai/docs/torchmetrics/stable/detection/mean_average_precision.html)
+- [Torchvision Mask R-CNN v2](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html)
+- [Torchvision Faster R-CNN](https://docs.pytorch.org/vision/main/models/faster_rcnn.html)
 
-## 🎯Objective
+## ❓ Problem Statement
+
+Litter and pollution are worldwide environmental problems. Trash objects in real scenes are often small, occluded, deformed, transparent, dirty, or visually similar to the background. This makes detection in uncontrolled environments harder than detecting clean, isolated recyclable objects.
+
+The goal of this project is to investigate whether computer vision models can detect litter instances in context and to understand which factors limit model quality.
+
+## 🎯 Objective
 
 This project aims to:
-* Provide solution for detection of trash based on its image
-* Pack the solution into API service for further usage
-* [Optional] provide solution better than initial model
 
-## 🗂️Dataset
+- train and evaluate object detection / instance segmentation models on TACO;
+- compare label setups such as classless detection, top-N supercategories, and merged categories;
+- diagnose why multiclass classification quality is low;
+- prepare the model and notebooks for later API/service integration.
 
-For this issue, the dataset of [trash annotations in context](http://tacodataset.org/) was chosen
+## 🗂️ Dataset
 
-* It consists of 1500 images with multiple litter elements.
-* Each image has multiple `masks` and `bbox` definitions for objects that were marked as trash
+The project uses [Trash Annotations in Context](https://github.com/pedropro/TACO).
 
-## 📊Initial metrics
+Key dataset properties:
 
-* Related [paper](https://arxiv.org/pdf/2003.06975) provided these metrics:
+- 1,500 real-world images;
+- 4,784 annotated litter instances according to the paper;
+- polygon masks and bounding boxes for each litter object;
+- 60 fine-grained categories grouped into 28 supercategories;
+- strong class imbalance and many visually ambiguous labels.
 
-| Dataset  | Class score  | Litter score | Ration score  |
-|:--------:|:------------:|:------------:|:-------------:|
-|  TACO_1  | $15.9 \pm 1.0$  | $26.2 \pm 1.0$ | $26.1 \pm$ |
-|  TACO_10 | $17.6 \pm 1.6$  | $18.4 pm 1.5$  | $19.4 \pm 1.5$ |
+The paper explicitly notes that all objects may be treated as one class, `litter`, and that some categories can be visually hard to distinguish. This became an important part of the experiments in this project.
 
-Where `score` are defined as:
+## 📄 Paper Baseline
+
+The TACO paper reports Mask R-CNN results on instance segmentation, not only bounding-box detection. The reported scores are AP-style mask metrics averaged over IoU thresholds, following the COCO-style evaluation protocol. Because of that, these numbers should not be compared directly with this project's main `bbox_map_50` metric.
+
+The paper evaluates two taxonomy settings:
+
+- `TACO_1`: classless litter detection/segmentation, where every annotated object is treated as `litter`;
+- `TACO_10`: multiclass litter detection/segmentation using 9 frequent supercategories plus an `Other` class.
+
+The table below reports the paper's AP-style mask results:
+
+| Dataset | Class score | Litter score | Ratio score |
+|:--|--:|--:|--:|
+| TACO_1 | $15.9 \pm 1.0$ | $26.2 \pm 1.0$ | $26.1 \pm 1.0$ |
+| TACO_10 | $17.6 \pm 1.6$ | $18.4 \pm 1.5$ | $19.4 \pm 1.5$ |
+
+The three columns use different prediction ranking strategies:
+
+- **Class score** uses the maximum class probability among foreground classes. It is most relevant for multiclass classification.
+- **Litter score** uses the probability of being any litter object rather than background. It is especially relevant for classless litter detection.
+- **Ratio score** compares the strongest foreground class probability against the background probability.
+
+The paper defines the scores as:
 
 $$
-\Large Scores = 
+Scores =
 \begin{cases}
-max_i p_i, \hspace{25pt} \text{class score} \\
-1 - p_{N+1}, \hspace{15pt} \text{litter score} \\
-\frac{max_i p_i}{p_{N+1} + \epsilon}, \hspace{35pt} \text{ratio score}
+\max_i p_i, & \text{class score} \\
+1 - p_{N+1}, & \text{litter score} \\
+\frac{\max_i p_i}{p_{N+1} + \epsilon}, & \text{ratio score}
 \end{cases}
 $$
 
-* According to paper, the metrics are related to masks task, not detection
+where $p_{N+1}$ is the background probability.
 
+In this project, the course target metric is bbox `mAP@0.5`, so the paper's mask AP values are used as context rather than as a strict baseline. The important qualitative comparison is consistent: classless litter detection is easier than fine-grained multiclass litter classification.
 
-## 📶Evaluation metrics
+## 📶 Evaluation Metrics
 
-* For the evaluation metric, [mean average precision](https://lightning.ai/docs/torchmetrics/stable/detection/mean_average_precision.html) was chosen
+The main project metric is bbox mean average precision:
 
-* According to the initial requirement, validation of `mAP` for such problem scores by groups:
-  * `mAP@0.5` < 0.6 – **1 point**
-  * `mAP@0.5` >= 0.6 – **4 point**
+- `bbox_map_50`: bounding-box mAP at IoU threshold 0.5;
+- `bbox_map`: COCO-style bbox mAP averaged over multiple IoU thresholds;
+- `bbox_mar_100`: mean average recall with up to 100 detections;
+- `class_accuracy_on_matches`: class accuracy only for predictions matched to a ground-truth box at IoU >= 0.5;
+- `match_rate`: fraction of ground-truth objects that received a matched prediction.
 
+The course requirement scores `mAP@0.5` as:
 
-## ⚙️Environment
+- `mAP@0.5 < 0.6` - 1 point;
+- `mAP@0.5 >= 0.6` - 4 points.
 
-* This project was implemented and executed in:
-  * [Google Colab](https://colab.research.google.com/)
-  * [Thunder compute](https://www.thundercompute.com/)
-* Therefore, related notebooks will be adjusted for running it in both environments
+## ⚙️ Environment
 
-## 🤖Model selection
+The notebooks were run in:
 
-* For this project, it is planned to use models:
-  * [Mask RCNN v1](https://github.com/matterport/mask_rcnn)
-  * [Mask RCNN v2](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html)
-  * [Faster RCNN](https://docs.pytorch.org/vision/main/models/faster_rcnn.html)
-  * [YOLO v8](https://docs.ultralytics.com/models/yolov8#overview)
-  * [YOLO v11](https://docs.ultralytics.com/models/yolo11#overview)
+- [Google Colab](https://colab.research.google.com/);
+- [Thunder Compute](https://www.thundercompute.com/) with NVIDIA A100 GPU.
+
+The notebooks are adjusted for remote GPU training, checkpoint saving, TensorBoard logging, and CSV-based experiment tracking.
+
+## 🤖 Models
+
+The main tested models were:
+
+- [Mask R-CNN / Matterport reference implementation](https://github.com/matterport/mask_rcnn);
+- [Torchvision Mask R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html);
+- [Torchvision Faster R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/faster_rcnn.html).
+
+YOLO-based models were considered as possible alternatives:
+
+- [YOLOv8](https://docs.ultralytics.com/models/yolov8);
+- [YOLO11](https://docs.ultralytics.com/models/yolo11).
