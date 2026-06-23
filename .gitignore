@@ -9,3 +9,8 @@ wheels/
 # Virtual environments
 .venv
 .DS_Store
+data/models/
+data/interim/
+.rtk/
+.mypy_cache/
+.claude/
