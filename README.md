@@ -109,13 +109,15 @@ The notebooks are adjusted for remote GPU training, checkpoint saving, TensorBoa
 
 ## 🤖 Models
 
-The main tested models were:
+Current implementation status:
 
-- [Mask R-CNN / Matterport reference implementation](https://github.com/matterport/mask_rcnn);
+- [Mask R-CNN / Matterport reference implementation](https://github.com/matterport/mask_rcnn) is the only model implemented in the current version of the project.
+
+Other architectures are planned for future iterations:
+
 - [Torchvision Mask R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html);
-- [Torchvision Faster R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/faster_rcnn.html).
-
-YOLO-based models were considered as possible alternatives:
-
+- [Torchvision Faster R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/faster_rcnn.html);
 - [YOLOv8](https://docs.ultralytics.com/models/yolov8);
 - [YOLO11](https://docs.ultralytics.com/models/yolo11).
+
+The experimental notes below include conclusions from exploratory model comparisons made during research. The productionized project code currently focuses on Mask R-CNN v1.
