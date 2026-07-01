@@ -14,3 +14,4 @@ data/interim/
 .rtk/
 .mypy_cache/
 .claude/
+.env
