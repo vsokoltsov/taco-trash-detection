@@ -1,5 +1,7 @@
 # Trash Annotations in Context
 
+[![CI](https://github.com/vsokoltsov/taco-trash-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/vsokoltsov/taco-trash-detection/actions/workflows/ci.yml)
+
 This project explores trash and litter detection using the [TACO dataset](https://github.com/pedropro/TACO) and instance detection/segmentation models.
 
 The work is implemented primarily in Jupyter notebooks and focuses on evaluating how well different model and label configurations detect litter in real-world images.
@@ -31,6 +33,10 @@ This project aims to:
 - compare label setups such as classless detection, top-N supercategories, and merged categories;
 - diagnose why multiclass classification quality is low;
 - prepare the model and notebooks for later API/service integration.
+
+## ▶️ Demo
+
+![](./docs/demo.gif)
 
 ## 🗂️ Dataset
 
@@ -121,3 +127,175 @@ Other architectures are planned for future iterations:
 - [YOLO11](https://docs.ultralytics.com/models/yolo11).
 
 The experimental notes below include conclusions from exploratory model comparisons made during research. The productionized project code currently focuses on Mask R-CNN v1.
+
+## 🏆 Best Model Results
+
+The best model is **Mask R-CNN v1** (`v1_small_objects_cosine_stage_3_25`, epoch 15) trained with the following configuration:
+
+- **Taxonomy**: official `map_17` class map (17 classes from the TACO authors)
+- **Anchors**: custom small-object anchor scales `(8, 16, 32)` at P2 FPN level
+- **Input**: multi-scale training `(800, 1024, 1280)` px, fixed `1024` px at inference
+- **Augmentation**: horizontal flip, brightness/contrast, random scale, rotation, Gaussian blur, CLAHE
+- **Training**: full backbone fine-tuning with differential learning rates; cosine annealing schedule
+
+### Metrics (single-split validation, score threshold 0.05)
+
+| Metric | Value |
+|:--|--:|
+| bbox mAP@0.5 | **0.187** |
+| bbox mAP (all IoU) | 0.126 |
+| segm mAP@0.5 | ~0.172 |
+| segm mAP (all IoU) | ~0.125 |
+| match rate | 0.482 |
+| class accuracy on matches | 0.557 |
+| map\_small | 0.013 |
+| Dice (mask) | 0.883 |
+
+### TACO-10 comparison
+
+Evaluated on the official TACO-10 taxonomy (same 10 classes as the paper), the model achieves **segm mAP ≈ 12.5%** vs the paper's reported **19.4% ± 1.5%**.
+
+The gap is explained by three structural differences:
+1. **Cigarette class is permanently zero** — the `map_17` taxonomy groups Cigarettes into `Other`, so the model never learned to predict them as a separate class. This alone accounts for roughly 2 percentage points.
+2. **Single train/val split** vs the paper's 4-fold cross-validation.
+3. **Fewer training epochs** (~30 effective epochs on the new taxonomy vs the paper's 100).
+
+### Key observations
+
+- **Class taxonomy is the dominant factor.** Switching from the ad-hoc top-10 setup to the official `map_17` taxonomy improved bbox mAP@0.5 from 0.118 → 0.176 (+49%) in a single training run.
+- **Backbone unfreezing is the second largest lever** (+0.021 mAP over heads-only training).
+- **Small objects remain the main limitation.** `map_small = 0.013` — tiny objects (cigarette butts, pop tabs, bottle caps) are detected only occasionally. Adding smaller FPN anchors (8 px at P2) improved `map_small` from 0.002 to 0.013 (6.5×), but further improvement requires copy-paste augmentation or higher-resolution training.
+- **Segmentation quality is high for detected objects.** Dice score of 0.883 means the mask shape is accurate when an object is found — the bottleneck is detection recall, not mask precision.
+- **ratio\_score did not improve mAP** for this model, unlike what the paper reports for their implementation.
+
+### Progress across experiments
+
+| Stage | bbox mAP@0.5 |
+|:--|--:|
+| Baseline heads-only, top-10 classes | 0.118 |
+| Backbone unfrozen | 0.139 |
+| Small anchors + map\_17 taxonomy | 0.176 |
+| Correct LR warm restart (stage 3) | **0.187** |
+
+---
+
+## 🌐 API
+
+The detection service exposes two endpoints served by FastAPI + ONNX Runtime.
+
+### `POST /detect`
+
+Returns an annotated JPEG image with bounding boxes and optional segmentation masks drawn directly on the source image.
+
+**Request** — `multipart/form-data`
+
+| Field | Type | Description |
+|:--|:--|:--|
+| `file` | file | Source image (JPEG, PNG, WebP) |
+| `score_thresh` | float | Confidence threshold (default `0.20`) |
+| `show_masks` | bool | Overlay segmentation masks (default `false`) |
+
+**Response** — `image/jpeg`
+
+The image is resized to `1280 × 1024` px with coloured bounding boxes and label badges. Each class has a consistent colour across calls.
+
+---
+
+### `POST /detect/json`
+
+Returns structured detection results as JSON.
+
+**Request** — `multipart/form-data`
+
+| Field | Type | Description |
+|:--|:--|:--|
+| `file` | file | Source image |
+| `score_thresh` | float | Confidence threshold (default `0.20`) |
+
+**Response** — `application/json`
+
+```json
+{
+  "detections": [
+    {
+      "label": "Can",
+      "score": 0.82,
+      "box": [120.4, 88.1, 310.7, 295.3]
+    }
+  ]
+}
+```
+
+`box` is in `[x1, y1, x2, y2]` format (xyxy), pixel coordinates relative to the `1280 × 1024` output resolution.
+
+---
+
+### `GET /health`
+
+Returns `{"status": "ok"}` when the model is loaded and ready. Returns `503` while the model is still downloading or loading at startup.
+
+---
+
+## 🚀 Running the Project
+
+### Requirements
+
+| Tool | Purpose | Install |
+|:--|:--|:--|
+| **Docker** | Container runtime for the API and UI services | [docs.docker.com](https://docs.docker.com/get-docker/) |
+| **Docker Compose** | Multi-service orchestration | bundled with Docker Desktop |
+| **Make** | Convenience wrapper for common commands | pre-installed on macOS/Linux |
+| **uv** | Python package manager (dev/test only) | `curl -Lsf https://astral.sh/uv/install.sh \| sh` |
+
+> **Note:** The project was developed and tested on **macOS with Docker Desktop (Apple Silicon)**. The API container is built for `linux/amd64` via emulation (`platform: linux/amd64` in `docker-compose.yml`). Build times on Apple Silicon are slower than on a native Linux host due to QEMU emulation.
+
+### Quick start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/vsokoltsov/taco-trash-detection.git
+cd taco-trash-detection
+
+# 2. Create a .env file with your model path
+cp .env.example .env
+# edit .env and set MASK_RCNN_V1_PATH, STORAGE, USE_GPU
+
+# 3. Start the services
+docker compose up --build
+```
+
+- **API** → http://localhost:8000
+- **API docs** → http://localhost:8000/docs
+- **UI** → http://localhost:8501
+
+### Environment variables (`.env`)
+
+| Variable | Description | Example |
+|:--|:--|:--|
+| `MASK_RCNN_V1_PATH` | Google Drive URL or GCS path to the ONNX model | `https://drive.google.com/uc?id=...` |
+| `STORAGE` | Storage backend (`gdrive` or `gcp`) | `gdrive` |
+| `USE_GPU` | Enable CUDA inference (`true` / `false`) | `false` |
+
+### Local development (without Docker)
+
+```bash
+# Install dev dependencies
+uv sync --extra dev
+
+# Run checks
+make check      # lint + typecheck + tests
+
+make lint       # ruff check only
+make typecheck  # ty check only
+make test       # pytest only
+make fix        # auto-fix lint + format
+```
+
+### Docker services
+
+| Service | Image | Port |
+|:--|:--|:--|
+| `api` | CUDA 12.4 + Ubuntu 22.04 + Python 3.12 | `8000` |
+| `ui` | python:3.12-slim | `8501` |
+
+On a Linux GPU server (with the NVIDIA Container Toolkit installed), GPU inference is enabled automatically via the `deploy.resources` section in `docker-compose.yml`. On macOS, set `USE_GPU=false` to use CPU inference.
