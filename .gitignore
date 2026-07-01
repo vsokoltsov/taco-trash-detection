@@ -15,3 +15,5 @@ data/interim/
 .mypy_cache/
 .claude/
 .env
+.ruff_cache/
+.pytest_cache/
