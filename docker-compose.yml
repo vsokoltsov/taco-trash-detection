@@ -1,0 +1,35 @@
+services:
+  api:
+    platform: linux/amd64
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./trash_annotation:/app/trash_annotation
+      - ./models:/app/models:ro
+    env_file: .env
+    command: >
+      uvicorn trash_annotation.api:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --reload-dir /app/trash_annotation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui    # ← separate lightweight image
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./trash_annotation:/app/trash_annotation
+    depends_on:
+      api:
+        condition: service_healthy
