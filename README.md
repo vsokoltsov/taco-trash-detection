@@ -128,6 +128,19 @@ Other architectures are planned for future iterations:
 
 The experimental notes below include conclusions from exploratory model comparisons made during research. The productionized project code currently focuses on Mask R-CNN v1.
 
+### Inference format
+
+The web service runs inference using the model exported to **ONNX format**, not the original PyTorch checkpoint. This removes the PyTorch and torchvision dependencies from the production container, reducing the image size and improving startup time.
+
+The export process is documented and implemented in [`notebooks/06_inference.ipynb`](notebooks/06_inference.ipynb), which covers:
+
+- wrapping the Mask R-CNN model for single-image ONNX-compatible I/O;
+- exporting with `opset_version=12` using tracing-based export;
+- validating the exported model against the PyTorch original using IoU-based detection matching;
+- running inference with ONNX Runtime (`onnxruntime-gpu` on Linux, `onnxruntime` on macOS).
+
+> **Note:** `dynamo=True` export is not supported for Mask R-CNN because the RPN uses data-dependent NMS whose output size cannot be resolved statically at export time. Tracing-based export (`dynamo=False`) is the only viable option for this architecture.
+
 ## 🏆 Best Model Results
 
 The best model is **Mask R-CNN v1** (`v1_small_objects_cosine_stage_3_25`, epoch 15) trained with the following configuration:
