@@ -7,6 +7,8 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image, ImageDraw, ImageOps
 
+from trash_annotation.protocols import Detector
+
 IMAGE_SIZE = 1024
 
 YOLO_ID_TO_NAME = {
@@ -249,7 +251,7 @@ def _draw_predictions(
     return image
 
 
-class YoloDetector:
+class YoloDetector(Detector):
     """YOLOv8 ONNX detector with preprocessing and rendering encapsulated."""
 
     supports_masks = False

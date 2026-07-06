@@ -4,6 +4,8 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image, ImageDraw
 
+from trash_annotation.protocols import Detector
+
 # ── colour palette — one consistent colour per class label ────────────────────
 _PALETTE = [
     (220, 50, 50),
@@ -173,7 +175,7 @@ def draw_predictions(image_path, predictions, id_to_name, score_thresh=0.20, sho
     return img
 
 
-class MaskRcnnDetector:
+class MaskRcnnDetector(Detector):
     """Object-oriented adapter for the existing Mask R-CNN inference code."""
 
     supports_masks = True
