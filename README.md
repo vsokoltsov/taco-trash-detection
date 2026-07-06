@@ -124,11 +124,14 @@ Both models are integrated into the FastAPI and Streamlit applications. The UI a
 
 Other architectures are planned for future iterations:
 
-- [Torchvision Mask R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html);
 - [Torchvision Faster R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/faster_rcnn.html);
 - [YOLO11](https://docs.ultralytics.com/models/yolo11).
 
-Mask R-CNN v2 was also evaluated experimentally, but its checkpoints did not outperform either implemented model and are not used by the application.
+### Mask R-CNN v2 experiment
+
+[Torchvision Mask R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html) was evaluated through a heads-only stage and five full-model training attempts. Its best checkpoint reached approximately `0.079` bbox mAP@0.5 and `0.035` COCO-style bbox mAP, compared with `0.187` and `0.126` for Mask R-CNN v1.
+
+The fifth attempt regressed to approximately `0.069` bbox mAP@0.5, confirming that the existing v2 configuration had plateaued. Mask R-CNN v2 is therefore retained only as a documented experiment and is not exposed as an available API or UI model. The complete configuration, visualizations, cycle-by-cycle observations, and stopping decision are available in [`notebooks/05_mask_rcnn_v2.ipynb`](notebooks/05_mask_rcnn_v2.ipynb).
 
 ### Inference format
 
@@ -172,7 +175,7 @@ The best-performing classes include `Can`, `Plastic bottle`, `Styrofoam piece`, 
 | Model | Task | bbox mAP@0.5 | bbox mAP@0.5:0.95 |
 |:--|:--|--:|--:|
 | Mask R-CNN v1 | Detection + instance segmentation | 0.187 | 0.126 |
-| Mask R-CNN v2, best experimental cycle | Detection + instance segmentation | 0.079 | 0.035 |
+| [Mask R-CNN v2, best experimental cycle](notebooks/05_mask_rcnn_v2.ipynb) | Detection + instance segmentation | 0.079 | 0.035 |
 | YOLOv8m | Detection | **0.327** | **0.263** |
 
 The comparison should be interpreted with some caution: the YOLO validation conversion contains 835 objects, while the earlier Mask R-CNN evaluator retained 796 objects. The margin is nevertheless large enough to establish YOLOv8m as the strongest bounding-box detector in this project.
