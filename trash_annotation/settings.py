@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     MASK_RCNN_V1_PATH: str = ""
+    YOLO_V8_PATH: str = ""
     STORAGE: StorageEnum = StorageEnum.GOOGLE_DRIVE
     USE_GPU: bool = False
 
