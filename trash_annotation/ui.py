@@ -14,12 +14,25 @@ st.set_page_config(
 with st.sidebar:
     st.title("⚙️ Settings")
     api_url = st.text_input("API URL", value="http://api:8000")
+    model_name = st.selectbox(
+        "Model",
+        options=["mask_rcnn_v1", "yolo_v8"],
+        format_func=lambda value: {
+            "mask_rcnn_v1": "Mask R-CNN v1",
+            "yolo_v8": "YOLOv8",
+        }[value],
+    )
     score_thresh = st.slider("Score threshold", 0.05, 0.95, 0.20, 0.05)
-    show_masks = st.checkbox("Show segmentation masks", value=False)
+    show_masks = st.checkbox(
+        "Show segmentation masks",
+        value=False,
+        disabled=model_name != "mask_rcnn_v1",
+        help="Masks are available only for Mask R-CNN v1.",
+    )
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 st.title("🗑️ TACO Trash Detector")
-st.caption("Upload a photo to detect and classify litter using Mask R-CNN v1.")
+st.caption("Upload a photo and compare Mask R-CNN v1 with YOLOv8.")
 
 uploaded = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png", "webp"])
 
@@ -38,7 +51,11 @@ if uploaded:
             img_resp = requests.post(
                 f"{api_url}/detect",
                 files=files,
-                params={"score_thresh": score_thresh, "show_masks": str(show_masks).lower()},
+                params={
+                    "model": model_name,
+                    "score_thresh": score_thresh,
+                    "show_masks": str(show_masks).lower(),
+                },
                 timeout=60,
             )
             img_resp.raise_for_status()
@@ -48,7 +65,7 @@ if uploaded:
             json_resp = requests.post(
                 f"{api_url}/detect/json",
                 files={"file": (uploaded.name, uploaded.getvalue(), uploaded.type)},
-                params={"score_thresh": score_thresh},
+                params={"model": model_name, "score_thresh": score_thresh},
                 timeout=60,
             )
             json_resp.raise_for_status()
