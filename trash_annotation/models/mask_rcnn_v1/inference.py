@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import onnxruntime as ort
 from PIL import Image, ImageDraw
@@ -169,3 +171,52 @@ def draw_predictions(image_path, predictions, id_to_name, score_thresh=0.20, sho
         draw.text((x1 + 2, max(0, y1 - 13)), f"{name} {score:.2f}", fill="white")
 
     return img
+
+
+class MaskRcnnDetector:
+    """Object-oriented adapter for the existing Mask R-CNN inference code."""
+
+    supports_masks = True
+
+    def __init__(
+        self,
+        session: ort.InferenceSession,
+        id_to_name: dict[int, str],
+    ) -> None:
+        self.session = session
+        self.id_to_name = id_to_name
+
+    @classmethod
+    def from_path(
+        cls,
+        model_path: str | Path,
+        id_to_name: dict[int, str],
+        use_gpu: bool = True,
+    ) -> "MaskRcnnDetector":
+        """Load a Mask R-CNN ONNX model and construct its detector."""
+        session = load_onnx_session(str(model_path), use_gpu=use_gpu)
+        return cls(session=session, id_to_name=id_to_name)
+
+    def predict(
+        self,
+        image_path: str | Path,
+        score_thresh: float = 0.20,
+    ) -> dict[str, np.ndarray]:
+        """Run Mask R-CNN inference for one image."""
+        return predict(self.session, str(image_path), score_thresh=score_thresh)
+
+    def draw_predictions(
+        self,
+        image_path: str | Path,
+        predictions: dict[str, np.ndarray],
+        score_thresh: float = 0.20,
+        show_masks: bool = False,
+    ) -> Image.Image:
+        """Draw Mask R-CNN boxes and optional instance masks."""
+        return draw_predictions(
+            str(image_path),
+            predictions,
+            self.id_to_name,
+            score_thresh=score_thresh,
+            show_masks=show_masks,
+        )
