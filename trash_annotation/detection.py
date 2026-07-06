@@ -1,8 +1,14 @@
 from dataclasses import dataclass
+from enum import StrEnum
+from pathlib import Path
+from typing import Protocol
 
-import onnxruntime as ort
+import numpy as np
+from PIL import Image
 
-ID_TO_NAME = {
+from trash_annotation.protocols import Detector
+
+MASK_RCNN_ID_TO_NAME = {
     1: "Aluminium foil",
     2: "Can",
     3: "Carton",
@@ -23,11 +29,17 @@ ID_TO_NAME = {
 }
 
 
+class ModelName(StrEnum):
+    MASK_RCNN_V1 = "mask_rcnn_v1"
+    YOLO_V8 = "yolo_v8"
+
+
 @dataclass
 class DetectionService:
-    session: ort.InferenceSession
-    id_to_name: dict[int, str] | None = None
+    detectors: dict[ModelName, Detector]
 
-    def __post_init__(self):
-        if self.id_to_name is None:
-            self.id_to_name = ID_TO_NAME
+    def get_detector(self, model_name: ModelName) -> Detector:
+        try:
+            return self.detectors[model_name]
+        except KeyError as error:
+            raise LookupError(f"Model {model_name.value!r} is not loaded") from error
