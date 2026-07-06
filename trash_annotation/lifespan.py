@@ -1,24 +1,57 @@
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
 
-from trash_annotation.detection import DetectionService
-from trash_annotation.models.mask_rcnn_v1.inference import load_onnx_session
+from trash_annotation.detection import (
+    MASK_RCNN_ID_TO_NAME,
+    DetectionService,
+    Detector,
+    ModelName,
+)
+from trash_annotation.models.mask_rcnn_v1.inference import MaskRcnnDetector
+from trash_annotation.models.yolo_v8.inference import YoloDetector
 from trash_annotation.settings import Settings, get_settings
 from trash_annotation.storage import GDriveStorage
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings: Settings = get_settings()
     storage = GDriveStorage()
-    model_name = "mask_rcnn_v1.onnx"
-    model_path = storage.download(url=settings.MASK_RCNN_V1_PATH, local_name=model_name)
-    session = load_onnx_session(model_path, use_gpu=settings.USE_GPU)
+    detectors: dict[ModelName, Detector] = {}
 
-    service = DetectionService(session=session)
+    if settings.MASK_RCNN_V1_PATH:
+        try:
+            model_path = storage.download(
+                url=settings.MASK_RCNN_V1_PATH,
+                local_name="mask_rcnn_v1.onnx",
+            )
+            detectors[ModelName.MASK_RCNN_V1] = MaskRcnnDetector.from_path(
+                model_path,
+                id_to_name=MASK_RCNN_ID_TO_NAME,
+                use_gpu=settings.USE_GPU,
+            )
+        except Exception:
+            logger.exception("Failed to load Mask R-CNN v1")
+
+    if settings.YOLO_V8_PATH:
+        try:
+            model_path = storage.download(
+                url=settings.YOLO_V8_PATH,
+                local_name="yolo_v8.onnx",
+            )
+            detectors[ModelName.YOLO_V8] = YoloDetector(
+                model_path,
+                use_gpu=settings.USE_GPU,
+            )
+        except Exception:
+            logger.exception("Failed to load YOLOv8")
+
+    service = DetectionService(detectors=detectors)
 
     app.state.service = service
     yield
     app.state.service = None
-    app.state.session = None
