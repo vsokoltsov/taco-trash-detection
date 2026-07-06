@@ -117,78 +117,83 @@ The notebooks are adjusted for remote GPU training, checkpoint saving, TensorBoa
 
 Current implementation status:
 
-- [Mask R-CNN / Matterport reference implementation](https://github.com/matterport/mask_rcnn) is the only model implemented in the current version of the project.
+- [Torchvision Mask R-CNN ResNet50-FPN](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html) for bounding-box detection and instance segmentation;
+- [YOLOv8m](https://docs.ultralytics.com/models/yolov8) for bounding-box detection.
+
+Both models are integrated into the FastAPI and Streamlit applications. The UI allows the inference model to be selected for each uploaded image; segmentation-mask rendering is available only for Mask R-CNN.
 
 Other architectures are planned for future iterations:
 
 - [Torchvision Mask R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html);
 - [Torchvision Faster R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/faster_rcnn.html);
-- [YOLOv8](https://docs.ultralytics.com/models/yolov8);
 - [YOLO11](https://docs.ultralytics.com/models/yolo11).
 
-The experimental notes below include conclusions from exploratory model comparisons made during research. The productionized project code currently focuses on Mask R-CNN v1.
+Mask R-CNN v2 was also evaluated experimentally, but its checkpoints did not outperform either implemented model and are not used by the application.
 
 ### Inference format
 
-The web service runs inference using the model exported to **ONNX format**, not the original PyTorch checkpoint. This removes the PyTorch and torchvision dependencies from the production container, reducing the image size and improving startup time.
+The web service runs both models in **ONNX format**, not from their original PyTorch checkpoints. This removes the PyTorch and torchvision dependencies from the production container, reducing image size and startup overhead.
 
-The export process is documented and implemented in [`notebooks/06_inference.ipynb`](notebooks/06_inference.ipynb), which covers:
+The export processes are documented in:
 
-- wrapping the Mask R-CNN model for single-image ONNX-compatible I/O;
-- exporting with `opset_version=12` using tracing-based export;
-- validating the exported model against the PyTorch original using IoU-based detection matching;
-- running inference with ONNX Runtime (`onnxruntime-gpu` on Linux, `onnxruntime` on macOS).
+- [`notebooks/06_inference.ipynb`](notebooks/06_inference.ipynb) for Mask R-CNN v1;
+- [`notebooks/06_inference_yolo_v8.ipynb`](notebooks/06_inference_yolo_v8.ipynb) for YOLOv8.
 
-> **Note:** `dynamo=True` export is not supported for Mask R-CNN because the RPN uses data-dependent NMS whose output size cannot be resolved statically at export time. Tracing-based export (`dynamo=False`) is the only viable option for this architecture.
+The Mask R-CNN export wraps the model for fixed single-image ONNX-compatible I/O and uses tracing-based export. The YOLOv8 export uses a fixed `1024 × 1024` input and embeds non-maximum suppression in the ONNX graph. Both models are executed with ONNX Runtime (`onnxruntime-gpu` on Linux and `onnxruntime` during CPU development).
+
+> **Note:** `dynamo=True` export is not supported for Mask R-CNN because the RPN uses data-dependent NMS whose output size cannot be resolved statically at export time. Tracing-based export (`dynamo=False`) is used for this architecture.
 
 ## 🏆 Best Model Results
 
-The best model is **Mask R-CNN v1** (`v1_small_objects_cosine_stage_3_25`, epoch 15) trained with the following configuration:
+The best bounding-box detector is **YOLOv8m** (`yolov8m_continued_42`, best checkpoint from epoch 26 of the continuation stage). It uses the official reduced `map_17` taxonomy and was trained with the following configuration:
 
-- **Taxonomy**: official `map_17` class map (17 classes from the TACO authors)
-- **Anchors**: custom small-object anchor scales `(8, 16, 32)` at P2 FPN level
-- **Input**: multi-scale training `(800, 1024, 1280)` px, fixed `1024` px at inference
-- **Augmentation**: horizontal flip, brightness/contrast, random scale, rotation, Gaussian blur, CLAHE
-- **Training**: full backbone fine-tuning with differential learning rates; cosine annealing schedule
+- **Taxonomy**: official reduced `map_17` class map with 17 foreground classes;
+- **Architecture**: YOLOv8m detection model;
+- **Input size**: `1024 × 1024` pixels for the final stage and inference;
+- **Optimization**: AdamW with initial learning rate `2e-4` and cosine decay;
+- **Augmentation**: YOLO color, geometric, flip, and mosaic augmentation, with mosaic disabled for the final ten epochs;
+- **Model selection**: validation fitness with early stopping after ten epochs without improvement.
 
-### Metrics (single-split validation, score threshold 0.05)
+### Metrics
+
+The final checkpoint was evaluated on the deterministic validation split containing 300 images and 835 annotated objects. Validation used `imgsz=1024`, batch size `12`, confidence threshold `0.001`, IoU threshold `0.7`, and at most 300 detections per image.
 
 | Metric | Value |
 |:--|--:|
-| bbox mAP@0.5 | **0.187** |
-| bbox mAP (all IoU) | 0.126 |
-| segm mAP@0.5 | ~0.172 |
-| segm mAP (all IoU) | ~0.125 |
-| match rate | 0.482 |
-| class accuracy on matches | 0.557 |
-| map\_small | 0.013 |
-| Dice (mask) | 0.883 |
+| bbox mAP@0.5 | **0.327** |
+| bbox mAP@0.5:0.95 | **0.263** |
+| precision | 0.353 |
+| recall | 0.351 |
 
-### TACO-10 comparison
+The best-performing classes include `Can`, `Plastic bottle`, `Styrofoam piece`, and `Cup`. Rare categories and the broad `Other` category remain substantially more difficult. The course target of `mAP@0.5 >= 0.6` was not reached, but YOLOv8 produced a clear improvement over the Mask R-CNN experiments.
 
-Evaluated on the official TACO-10 taxonomy (same 10 classes as the paper), the model achieves **segm mAP ≈ 12.5%** vs the paper's reported **19.4% ± 1.5%**.
+### Model comparison
 
-The gap is explained by three structural differences:
-1. **Cigarette class is permanently zero** — the `map_17` taxonomy groups Cigarettes into `Other`, so the model never learned to predict them as a separate class. This alone accounts for roughly 2 percentage points.
-2. **Single train/val split** vs the paper's 4-fold cross-validation.
-3. **Fewer training epochs** (~30 effective epochs on the new taxonomy vs the paper's 100).
+| Model | Task | bbox mAP@0.5 | bbox mAP@0.5:0.95 |
+|:--|:--|--:|--:|
+| Mask R-CNN v1 | Detection + instance segmentation | 0.187 | 0.126 |
+| Mask R-CNN v2, best experimental cycle | Detection + instance segmentation | 0.079 | 0.035 |
+| YOLOv8m | Detection | **0.327** | **0.263** |
+
+The comparison should be interpreted with some caution: the YOLO validation conversion contains 835 objects, while the earlier Mask R-CNN evaluator retained 796 objects. The margin is nevertheless large enough to establish YOLOv8m as the strongest bounding-box detector in this project.
 
 ### Key observations
 
-- **Class taxonomy is the dominant factor.** Switching from the ad-hoc top-10 setup to the official `map_17` taxonomy improved bbox mAP@0.5 from 0.118 → 0.176 (+49%) in a single training run.
-- **Backbone unfreezing is the second largest lever** (+0.021 mAP over heads-only training).
-- **Small objects remain the main limitation.** `map_small = 0.013` — tiny objects (cigarette butts, pop tabs, bottle caps) are detected only occasionally. Adding smaller FPN anchors (8 px at P2) improved `map_small` from 0.002 to 0.013 (6.5×), but further improvement requires copy-paste augmentation or higher-resolution training.
-- **Segmentation quality is high for detected objects.** Dice score of 0.883 means the mask shape is accurate when an object is found — the bottleneck is detection recall, not mask precision.
-- **ratio\_score did not improve mAP** for this model, unlike what the paper reports for their implementation.
+- **Architecture matters.** YOLOv8m learned useful bounding-box features much faster and reached considerably higher validation mAP than either Mask R-CNN version.
+- **Class taxonomy remains a major limitation.** Classless detection was consistently easier than the 17-class problem, and several visually similar or rare classes remain poorly separated.
+- **Training beyond the best epoch was not useful.** The final run peaked at epoch 26 and stopped after ten non-improving epochs; deployment therefore uses `best.pt`, not `last.pt`.
+- **Evaluation settings must remain fixed.** Changing the validation batch size altered rectangular padding and produced different metrics. Re-evaluating with batch size 12 reproduced the training result.
+- **Mask R-CNN remains useful when instance masks are required.** Its Dice score was high for matched objects even though its bounding-box recall and mAP were lower.
 
 ### Progress across experiments
 
 | Stage | bbox mAP@0.5 |
 |:--|--:|
-| Baseline heads-only, top-10 classes | 0.118 |
-| Backbone unfrozen | 0.139 |
-| Small anchors + map\_17 taxonomy | 0.176 |
-| Correct LR warm restart (stage 3) | **0.187** |
+| Mask R-CNN heads-only, top-10 classes | 0.118 |
+| Mask R-CNN v1, final checkpoint | 0.187 |
+| YOLOv8m, 3-epoch smoke test | 0.222 |
+| YOLOv8m, 15-epoch pilot | 0.230 |
+| YOLOv8m, final continuation | **0.327** |
 
 ---
 
@@ -205,12 +210,13 @@ Returns an annotated JPEG image with bounding boxes and optional segmentation ma
 | Field | Type | Description |
 |:--|:--|:--|
 | `file` | file | Source image (JPEG, PNG, WebP) |
+| `model` | string | `mask_rcnn_v1` (default) or `yolo_v8` |
 | `score_thresh` | float | Confidence threshold (default `0.20`) |
-| `show_masks` | bool | Overlay segmentation masks (default `false`) |
+| `show_masks` | bool | Overlay Mask R-CNN masks (default `false`; ignored by YOLOv8) |
 
 **Response** — `image/jpeg`
 
-The image is resized to `1280 × 1024` px with coloured bounding boxes and label badges. Each class has a consistent colour across calls.
+The response contains coloured bounding boxes and label badges. Mask R-CNN returns its fixed export resolution; YOLOv8 maps detections back onto the original image dimensions.
 
 ---
 
@@ -223,6 +229,7 @@ Returns structured detection results as JSON.
 | Field | Type | Description |
 |:--|:--|:--|
 | `file` | file | Source image |
+| `model` | string | `mask_rcnn_v1` (default) or `yolo_v8` |
 | `score_thresh` | float | Confidence threshold (default `0.20`) |
 
 **Response** — `application/json`
@@ -239,13 +246,13 @@ Returns structured detection results as JSON.
 }
 ```
 
-`box` is in `[x1, y1, x2, y2]` format (xyxy), pixel coordinates relative to the `1280 × 1024` output resolution.
+`box` is in `[x1, y1, x2, y2]` format (xyxy). Coordinates are relative to the image returned by the selected detector.
 
 ---
 
 ### `GET /health`
 
-Returns `{"status": "ok"}` when the model is loaded and ready. Returns `503` while the model is still downloading or loading at startup.
+Returns the service status and successfully loaded models, for example `{"status": "ok", "models": ["mask_rcnn_v1", "yolo_v8"]}`. Returns `503` when no model could be loaded.
 
 ---
 
@@ -271,7 +278,7 @@ cd taco-trash-detection
 
 # 2. Create a .env file with your model path
 cp .env.example .env
-# edit .env and set MASK_RCNN_V1_PATH, STORAGE, USE_GPU
+# edit .env and set MASK_RCNN_V1_PATH, YOLO_V8_PATH, STORAGE, USE_GPU
 
 # 3. Start the services
 docker compose up --build
@@ -285,7 +292,8 @@ docker compose up --build
 
 | Variable | Description | Example |
 |:--|:--|:--|
-| `MASK_RCNN_V1_PATH` | Google Drive URL or GCS path to the ONNX model | `https://drive.google.com/uc?id=...` |
+| `MASK_RCNN_V1_PATH` | Google Drive URL or GCS path to the Mask R-CNN ONNX model | `https://drive.google.com/uc?id=...` |
+| `YOLO_V8_PATH` | Google Drive URL or GCS path to the YOLOv8 ONNX model | `https://drive.google.com/uc?id=...` |
 | `STORAGE` | Storage backend (`gdrive` or `gcp`) | `gdrive` |
 | `USE_GPU` | Enable CUDA inference (`true` / `false`) | `false` |
 
