@@ -73,6 +73,7 @@ def test_predict_restores_coordinates_and_zero_based_labels(tmp_path):
     np.testing.assert_allclose(result["boxes"], [[20, 10, 180, 90]], atol=1e-4)
     np.testing.assert_allclose(result["scores"], [0.9])
     np.testing.assert_array_equal(result["labels"], [0])
+    assert session.feed is not None
     assert session.feed["images"].shape == (1, 3, 1024, 1024)
 
 

@@ -69,9 +69,7 @@ def load_onnx_session(model_path: str | Path, use_gpu: bool = True) -> ort.Infer
         A ready-to-use ONNX Runtime inference session.
     """
     providers = (
-        ["CUDAExecutionProvider", "CPUExecutionProvider"]
-        if use_gpu
-        else ["CPUExecutionProvider"]
+        ["CUDAExecutionProvider", "CPUExecutionProvider"] if use_gpu else ["CPUExecutionProvider"]
     )
     return ort.InferenceSession(str(model_path), providers=providers)
 

@@ -1,7 +1,9 @@
 from pathlib import Path
 from typing import Protocol
+
 import numpy as np
 from PIL import Image
+
 
 class Detector(Protocol):
     id_to_name: dict[int, str]

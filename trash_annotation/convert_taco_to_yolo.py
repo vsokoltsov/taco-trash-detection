@@ -89,7 +89,7 @@ def build_class_mapping(
         class_names = [
             str(categories_by_id[category_id]["name"]) for category_id in sorted(categories_by_id)
         ]
-        source_to_yolo = {
+        source_to_yolo: dict[int, int | None] = {
             category_id: yolo_id for yolo_id, category_id in enumerate(sorted(categories_by_id))
         }
         return source_to_yolo, class_names
@@ -113,16 +113,9 @@ def split_image_ids(
     train_fraction: float,
     seed: int,
 ) -> tuple[set[int], set[int]]:
-    """Create a deterministic image split, using the notebook's Torch split when available."""
-    try:
-        import torch
-    except ModuleNotFoundError:
-        print("Warning: Torch is unavailable; using a deterministic Python split instead.")
-        permutation = list(range(len(image_ids)))
-        random.Random(seed).shuffle(permutation)
-    else:
-        generator = torch.Generator().manual_seed(seed)
-        permutation = torch.randperm(len(image_ids), generator=generator).tolist()
+    """Create a deterministic image split."""
+    permutation = list(range(len(image_ids)))
+    random.Random(seed).shuffle(permutation)
     train_size = int(train_fraction * len(image_ids))
     train_ids = {image_ids[index] for index in permutation[:train_size]}
     val_ids = {image_ids[index] for index in permutation[train_size:]}

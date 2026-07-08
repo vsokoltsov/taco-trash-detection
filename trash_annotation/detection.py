@@ -1,10 +1,5 @@
 from dataclasses import dataclass
 from enum import StrEnum
-from pathlib import Path
-from typing import Protocol
-
-import numpy as np
-from PIL import Image
 
 from trash_annotation.protocols import Detector
 
