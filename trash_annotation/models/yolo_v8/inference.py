@@ -1,4 +1,4 @@
-"""ONNX Runtime inference helpers for the YOLOv8 detector."""
+"""ONNX Runtime inference helpers for YOLO detection models."""
 
 from pathlib import Path
 from typing import cast
@@ -29,6 +29,14 @@ YOLO_ID_TO_NAME = {
     14: "Straw",
     15: "Styrofoam piece",
     16: "Wrapper",
+}
+
+YOLO_V11_TOP5_ID_TO_NAME = {
+    0: "Can",
+    1: "Cup",
+    2: "Plastic bottle",
+    3: "Plastic bottle cap",
+    4: "Plastic film",
 }
 
 # Keep one stable color for each YOLO class.
@@ -141,6 +149,7 @@ def _predict(
     session: ort.InferenceSession,
     image_path: str | Path,
     score_thresh: float = 0.20,
+    image_size: int = IMAGE_SIZE,
 ) -> dict[str, np.ndarray]:
     """Run YOLOv8 inference and return the route-compatible prediction format.
 
@@ -161,7 +170,7 @@ def _predict(
         coordinates, ``scores`` as ``[N]``, and zero-based ``labels`` as
         ``[N]``.
     """
-    tensor, scale, pad_x, pad_y, original_size = preprocess(image_path)
+    tensor, scale, pad_x, pad_y, original_size = preprocess(image_path, image_size=image_size)
     input_name = session.get_inputs()[0].name
     output = cast(np.ndarray, session.run(None, {input_name: tensor})[0])
     detections = _normalize_nms_output(output)
@@ -250,7 +259,7 @@ def _draw_predictions(
 
 
 class YoloDetector(Detector):
-    """YOLOv8 ONNX detector with preprocessing and rendering encapsulated."""
+    """YOLO ONNX detector with preprocessing and rendering encapsulated."""
 
     supports_masks = False
 
@@ -259,17 +268,24 @@ class YoloDetector(Detector):
         model_path: str | Path,
         use_gpu: bool = True,
         id_to_name: dict[int, str] | None = None,
+        image_size: int = IMAGE_SIZE,
     ) -> None:
         self.session = load_onnx_session(model_path, use_gpu=use_gpu)
         self.id_to_name = id_to_name or YOLO_ID_TO_NAME.copy()
+        self.image_size = image_size
 
     def predict(
         self,
         image_path: str | Path,
         score_thresh: float = 0.20,
     ) -> dict[str, np.ndarray]:
-        """Run YOLOv8 inference for one image."""
-        return _predict(self.session, image_path, score_thresh=score_thresh)
+        """Run YOLO inference for one image."""
+        return _predict(
+            self.session,
+            image_path,
+            score_thresh=score_thresh,
+            image_size=self.image_size,
+        )
 
     def draw_predictions(
         self,
@@ -278,11 +294,27 @@ class YoloDetector(Detector):
         score_thresh: float = 0.20,
         show_masks: bool = False,
     ) -> Image.Image:
-        """Draw YOLOv8 bounding boxes on the original image."""
+        """Draw YOLO bounding boxes on the original image."""
         return _draw_predictions(
             image_path,
             predictions,
             self.id_to_name,
             score_thresh=score_thresh,
             show_masks=show_masks,
+        )
+
+
+class YoloV11Top5Detector(YoloDetector):
+    """YOLOv11 top-5 ONNX detector exported with a fixed 1280 input size."""
+
+    def __init__(
+        self,
+        model_path: str | Path,
+        use_gpu: bool = True,
+    ) -> None:
+        super().__init__(
+            model_path,
+            use_gpu=use_gpu,
+            id_to_name=YOLO_V11_TOP5_ID_TO_NAME.copy(),
+            image_size=1280,
         )

@@ -5,6 +5,7 @@ from PIL import Image
 
 from trash_annotation.models.yolo_v8.inference import (
     YoloDetector,
+    YoloV11Top5Detector,
     preprocess,
 )
 
@@ -122,3 +123,26 @@ def test_draw_predictions_preserves_original_image_size(tmp_path):
     )
 
     assert result.size == (200, 100)
+
+
+def test_yolo_v11_top5_detector_uses_top5_labels_and_1280_input(tmp_path):
+    path = make_image(tmp_path / "image.jpg")
+    output = np.array(
+        [[[128.0, 384.0, 1152.0, 896.0, 0.9, 0.0]]],
+        dtype=np.float32,
+    )
+    session = FakeSession(output)
+
+    with patch(
+        "trash_annotation.models.yolo_v8.inference.load_onnx_session",
+        return_value=session,
+    ):
+        detector = YoloV11Top5Detector("model.onnx")
+
+    result = detector.predict(path, score_thresh=0.2)
+
+    np.testing.assert_allclose(result["boxes"], [[20, 10, 180, 90]], atol=1e-4)
+    np.testing.assert_array_equal(result["labels"], [0])
+    assert detector.id_to_name[0] == "Can"
+    assert session.feed is not None
+    assert session.feed["images"].shape == (1, 3, 1280, 1280)

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     MASK_RCNN_V1_PATH: str = ""
     YOLO_V8_PATH: str = ""
+    YOLO_V11_TOP5_PATH: str = ""
     STORAGE: StorageEnum = StorageEnum.GOOGLE_DRIVE
     USE_GPU: bool = False
 

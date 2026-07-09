@@ -10,7 +10,7 @@ from trash_annotation.detection import (
     ModelName,
 )
 from trash_annotation.models.mask_rcnn_v1.inference import MaskRcnnDetector
-from trash_annotation.models.yolo_v8.inference import YoloDetector
+from trash_annotation.models.yolo_v8.inference import YoloDetector, YoloV11Top5Detector
 from trash_annotation.settings import Settings, get_settings
 from trash_annotation.storage import GDriveStorage
 
@@ -49,6 +49,19 @@ async def lifespan(app: FastAPI):
             )
         except Exception:
             logger.exception("Failed to load YOLOv8")
+
+    if settings.YOLO_V11_TOP5_PATH:
+        try:
+            model_path = storage.download(
+                url=settings.YOLO_V11_TOP5_PATH,
+                local_name="yolo_v11_top5.onnx",
+            )
+            detectors[ModelName.YOLO_V11_TOP5] = YoloV11Top5Detector(
+                model_path,
+                use_gpu=settings.USE_GPU,
+            )
+        except Exception:
+            logger.exception("Failed to load YOLOv11 top-5")
 
     service = DetectionService(detectors=detectors)
 
