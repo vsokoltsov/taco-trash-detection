@@ -118,6 +118,7 @@ The notebooks are adjusted for remote GPU training, checkpoint saving, TensorBoa
 Current implementation status:
 
 - [Torchvision Mask R-CNN ResNet50-FPN](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html) for bounding-box detection and instance segmentation;
+- [Torchvision Faster R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/faster_rcnn.html) for bounding-box-only detection;
 - [YOLOv8m](https://docs.ultralytics.com/models/yolov8) for bounding-box detection;
 - [YOLO11l top-5](https://docs.ultralytics.com/models/yolo11/) for the final reduced-class bounding-box detector.
 
@@ -125,7 +126,6 @@ These models are integrated into the FastAPI and Streamlit applications. The UI 
 
 Other architectures were evaluated experimentally but are not currently exposed as production models:
 
-- [Torchvision Faster R-CNN ResNet50-FPN v2](https://docs.pytorch.org/vision/main/models/faster_rcnn.html);
 - [YOLO11x](https://docs.ultralytics.com/models/yolo11);
 - [RT-DETR](https://docs.ultralytics.com/models/rtdetr).
 
@@ -143,9 +143,10 @@ The export processes are documented in:
 
 - [`notebooks/06_inference.ipynb`](notebooks/06_inference.ipynb) for Mask R-CNN v1;
 - [`notebooks/06_inference_yolo_v8.ipynb`](notebooks/06_inference_yolo_v8.ipynb) for YOLOv8;
-- [`notebooks/05_yolo_v11.ipynb`](notebooks/05_yolo_v11.ipynb) for YOLO11 training, validation, and export context.
+- [`notebooks/05_yolo_v11.ipynb`](notebooks/05_yolo_v11.ipynb) for YOLO11 training, validation, and export context;
+- [`notebooks/06_inference_fast_rcnn.ipynb`](notebooks/06_inference_fast_rcnn.ipynb) for Faster R-CNN export context.
 
-The Mask R-CNN export wraps the model for fixed single-image ONNX-compatible I/O and uses tracing-based export. The YOLOv8 export uses a fixed `1024 × 1024` input and embeds non-maximum suppression in the ONNX graph. The YOLO11 top-5 export uses a fixed `1280 × 1280` input and also embeds non-maximum suppression. All models are executed with ONNX Runtime (`onnxruntime-gpu` on Linux and `onnxruntime` during CPU development).
+The Mask R-CNN export wraps the model for fixed single-image ONNX-compatible I/O and uses tracing-based export. The Faster R-CNN export uses a fixed `1024 × 1024` input and returns boxes, labels, and scores without masks. The YOLOv8 export uses a fixed `1024 × 1024` input and embeds non-maximum suppression in the ONNX graph. The YOLO11 top-5 export uses a fixed `1280 × 1280` input and also embeds non-maximum suppression. All models are executed with ONNX Runtime (`onnxruntime-gpu` on Linux and `onnxruntime` during CPU development).
 
 > **Note:** `dynamo=True` export is not supported for Mask R-CNN because the RPN uses data-dependent NMS whose output size cannot be resolved statically at export time. Tracing-based export (`dynamo=False`) is used for this architecture.
 
@@ -179,6 +180,7 @@ Top-10 exact, filtered merged top-10, full merged top-10, YOLO11x, and RT-DETR-L
 |:--|:--|--:|--:|
 | Mask R-CNN v1 | Detection + instance segmentation | 0.187 | 0.126 |
 | [Mask R-CNN v2, best experimental cycle](notebooks/05_mask_rcnn_v2.ipynb) | Detection + instance segmentation | 0.079 | 0.035 |
+| Faster R-CNN merged taxonomy | Detection | 0.143 | 0.096 |
 | YOLOv8m | Detection | 0.327 | 0.263 |
 | YOLO11l top-5 | Detection | **0.502** | **0.350** |
 
@@ -217,13 +219,13 @@ Returns an annotated JPEG image with bounding boxes and optional segmentation ma
 | Field | Type | Description |
 |:--|:--|:--|
 | `file` | file | Source image (JPEG, PNG, WebP) |
-| `model` | string | `mask_rcnn_v1` (default), `yolo_v8`, or `yolo_v11_top5` |
+| `model` | string | `mask_rcnn_v1` (default), `yolo_v8`, `yolo_v11_top5`, or `fast_rcnn` |
 | `score_thresh` | float | Confidence threshold (default `0.20`) |
-| `show_masks` | bool | Overlay Mask R-CNN masks (default `false`; ignored by YOLO models) |
+| `show_masks` | bool | Overlay Mask R-CNN masks (default `false`; ignored by detection-only models) |
 
 **Response** — `image/jpeg`
 
-The response contains coloured bounding boxes and label badges. Mask R-CNN returns its fixed export resolution; YOLO models map detections back onto the original image dimensions.
+The response contains coloured bounding boxes and label badges. Mask R-CNN and Faster R-CNN return their fixed export resolutions; YOLO models map detections back onto the original image dimensions.
 
 ---
 
@@ -236,7 +238,7 @@ Returns structured detection results as JSON.
 | Field | Type | Description |
 |:--|:--|:--|
 | `file` | file | Source image |
-| `model` | string | `mask_rcnn_v1` (default), `yolo_v8`, or `yolo_v11_top5` |
+| `model` | string | `mask_rcnn_v1` (default), `yolo_v8`, `yolo_v11_top5`, or `fast_rcnn` |
 | `score_thresh` | float | Confidence threshold (default `0.20`) |
 
 **Response** — `application/json`
@@ -259,7 +261,7 @@ Returns structured detection results as JSON.
 
 ### `GET /health`
 
-Returns the service status and successfully loaded models, for example `{"status": "ok", "models": ["mask_rcnn_v1", "yolo_v11_top5"]}`. Returns `503` when no model could be loaded.
+Returns the service status and successfully loaded models, for example `{"status": "ok", "models": ["fast_rcnn", "mask_rcnn_v1", "yolo_v11_top5"]}`. Returns `503` when no model could be loaded.
 
 ---
 
@@ -302,6 +304,7 @@ docker compose up --build
 | `MASK_RCNN_V1_PATH` | Google Drive URL or GCS path to the Mask R-CNN ONNX model | `https://drive.google.com/uc?id=...` |
 | `YOLO_V8_PATH` | Google Drive URL or GCS path to the YOLOv8 ONNX model | `https://drive.google.com/uc?id=...` |
 | `YOLO_V11_TOP5_PATH` | Google Drive URL or GCS path to the YOLO11l top-5 ONNX model | `https://drive.google.com/uc?id=...` |
+| `FAST_RCNN_PATH` | Google Drive URL or GCS path to the Faster R-CNN ONNX model | `https://drive.google.com/uc?id=...` |
 | `STORAGE` | Storage backend (`gdrive` or `gcp`) | `gdrive` |
 | `USE_GPU` | Enable CUDA inference (`true` / `false`) | `false` |
 

@@ -28,6 +28,7 @@ class ModelName(StrEnum):
     MASK_RCNN_V1 = "mask_rcnn_v1"
     YOLO_V8 = "yolo_v8"
     YOLO_V11_TOP5 = "yolo_v11_top5"
+    FAST_RCNN = "fast_rcnn"
 
 
 @dataclass

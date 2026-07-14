@@ -9,6 +9,7 @@ from trash_annotation.detection import (
     Detector,
     ModelName,
 )
+from trash_annotation.models.fast_rcnn.inference import FastRcnnDetector
 from trash_annotation.models.mask_rcnn_v1.inference import MaskRcnnDetector
 from trash_annotation.models.yolo_v8.inference import YoloDetector, YoloV11Top5Detector
 from trash_annotation.settings import Settings, get_settings
@@ -62,6 +63,19 @@ async def lifespan(app: FastAPI):
             )
         except Exception:
             logger.exception("Failed to load YOLOv11 top-5")
+
+    if settings.FAST_RCNN_PATH:
+        try:
+            model_path = storage.download(
+                url=settings.FAST_RCNN_PATH,
+                local_name="fast_rcnn.onnx",
+            )
+            detectors[ModelName.FAST_RCNN] = FastRcnnDetector(
+                model_path,
+                use_gpu=settings.USE_GPU,
+            )
+        except Exception:
+            logger.exception("Failed to load Faster R-CNN")
 
     service = DetectionService(detectors=detectors)
 

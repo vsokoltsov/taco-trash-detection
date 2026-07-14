@@ -16,11 +16,12 @@ with st.sidebar:
     api_url = st.text_input("API URL", value="http://api:8000")
     model_name = st.selectbox(
         "Model",
-        options=["mask_rcnn_v1", "yolo_v8", "yolo_v11_top5"],
+        options=["mask_rcnn_v1", "yolo_v8", "yolo_v11_top5", "fast_rcnn"],
         format_func=lambda value: {
             "mask_rcnn_v1": "Mask R-CNN v1",
             "yolo_v8": "YOLOv8",
             "yolo_v11_top5": "YOLOv11l top-5",
+            "fast_rcnn": "Faster R-CNN",
         }[value],
     )
     score_thresh = st.slider("Score threshold", 0.05, 0.95, 0.20, 0.05)
@@ -33,7 +34,7 @@ with st.sidebar:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 st.title("🗑️ TACO Trash Detector")
-st.caption("Upload a photo and compare Mask R-CNN v1, YOLOv8, and YOLOv11l top-5.")
+st.caption("Upload a photo and compare Mask R-CNN v1, YOLOv8, YOLOv11l top-5, and Faster R-CNN.")
 
 uploaded = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png", "webp"])
 
