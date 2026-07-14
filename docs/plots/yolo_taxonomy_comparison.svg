@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560">
+<rect width="100%" height="100%" fill="white"/>
+<text x="490.0" y="32" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700">YOLO Experiments And Class Taxonomy</text>
+<line x1="90" y1="430.0" x2="940" y2="430.0" stroke="#e5e7eb"/>
+<text x="78" y="434.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.00</text>
+<line x1="90" y1="358.0" x2="940" y2="358.0" stroke="#e5e7eb"/>
+<text x="78" y="362.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.11</text>
+<line x1="90" y1="286.0" x2="940" y2="286.0" stroke="#e5e7eb"/>
+<text x="78" y="290.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.22</text>
+<line x1="90" y1="214.0" x2="940" y2="214.0" stroke="#e5e7eb"/>
+<text x="78" y="218.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.34</text>
+<line x1="90" y1="142.0" x2="940" y2="142.0" stroke="#e5e7eb"/>
+<text x="78" y="146.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.45</text>
+<line x1="90" y1="70.0" x2="940" y2="70.0" stroke="#e5e7eb"/>
+<text x="78" y="74.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.56</text>
+<line x1="90" y1="108.6" x2="940" y2="108.6" stroke="#d62728" stroke-dasharray="6 4" stroke-width="2"/>
+<text x="940" y="100.6" text-anchor="end" font-family="Arial" font-size="12" fill="#d62728">target 0.50</text>
+<line x1="90" y1="430" x2="940" y2="430" stroke="#333"/>
+<line x1="90" y1="70" x2="90" y2="430" stroke="#333"/>
+<rect x="113.8" y="219.8" width="122.4" height="210.2" fill="#2f80ed"/>
+<text x="175.0" y="213.8" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.327</text>
+<rect x="283.8" y="161.3" width="122.4" height="268.7" fill="#2f80ed"/>
+<text x="345.0" y="155.3" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.418</text>
+<rect x="453.8" y="165.8" width="122.4" height="264.2" fill="#2f80ed"/>
+<text x="515.0" y="159.8" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.411</text>
+<rect x="623.8" y="189.6" width="122.4" height="240.4" fill="#2f80ed"/>
+<text x="685.0" y="183.6" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.374</text>
+<rect x="793.8" y="107.3" width="122.4" height="322.7" fill="#2f80ed"/>
+<text x="855.0" y="101.3" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.502</text>
+<text x="175.0" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">YOLOv8m</text>
+<text x="175.0" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">17 classes</text>
+<text x="345.0" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">YOLO11l</text>
+<text x="345.0" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">10 filtered</text>
+<text x="515.0" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">YOLO11l</text>
+<text x="515.0" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">merged 10</text>
+<text x="685.0" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">YOLO11x</text>
+<text x="685.0" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">10 filtered</text>
+<text x="855.0" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">YOLO11l</text>
+<text x="855.0" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">top-5</text>
+<rect x="90" y="516" width="12" height="12" fill="#2f80ed"/>
+<text x="108" y="526" font-family="Arial" font-size="13" fill="#333">bbox mAP@0.5</text>
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560">
+<rect width="100%" height="100%" fill="white"/>
+<text x="490.0" y="32" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700">Faster R-CNN: Merged Taxonomy And Full Tuning</text>
+<line x1="90" y1="430.0" x2="940" y2="430.0" stroke="#e5e7eb"/>
+<text x="78" y="434.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.00</text>
+<line x1="90" y1="358.0" x2="940" y2="358.0" stroke="#e5e7eb"/>
+<text x="78" y="362.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.03</text>
+<line x1="90" y1="286.0" x2="940" y2="286.0" stroke="#e5e7eb"/>
+<text x="78" y="290.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.07</text>
+<line x1="90" y1="214.0" x2="940" y2="214.0" stroke="#e5e7eb"/>
+<text x="78" y="218.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.10</text>
+<line x1="90" y1="142.0" x2="940" y2="142.0" stroke="#e5e7eb"/>
+<text x="78" y="146.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.14</text>
+<line x1="90" y1="70.0" x2="940" y2="70.0" stroke="#e5e7eb"/>
+<text x="78" y="74.0" text-anchor="end" font-family="Arial" font-size="12" fill="#555">0.17</text>
+<line x1="90" y1="430" x2="940" y2="430" stroke="#333"/>
+<line x1="90" y1="70" x2="90" y2="430" stroke="#333"/>
+<rect x="119.8" y="275.4" width="153.0" height="154.6" fill="#2f80ed"/>
+<text x="196.2" y="269.4" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.073</text>
+<rect x="332.2" y="254.2" width="153.0" height="175.8" fill="#2f80ed"/>
+<text x="408.8" y="248.2" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.083</text>
+<rect x="544.8" y="161.1" width="153.0" height="268.9" fill="#2f80ed"/>
+<text x="621.2" y="155.1" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.127</text>
+<rect x="757.2" y="127.2" width="153.0" height="302.8" fill="#2f80ed"/>
+<text x="833.8" y="121.2" text-anchor="middle" font-family="Arial" font-size="11" fill="#222">0.143</text>
+<text x="196.2" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">Exact top-10</text>
+<text x="196.2" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">heads</text>
+<text x="408.8" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">Exact top-10</text>
+<text x="408.8" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">full</text>
+<text x="621.2" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">Merged</text>
+<text x="621.2" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">heads</text>
+<text x="833.8" y="458.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">Merged</text>
+<text x="833.8" y="473.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">full</text>
+<rect x="90" y="516" width="12" height="12" fill="#2f80ed"/>
+<text x="108" y="526" font-family="Arial" font-size="13" fill="#333">bbox mAP@0.5</text>
+</svg>

@@ -34,6 +34,15 @@ This project aims to:
 - diagnose why multiclass classification quality is low;
 - prepare the model and notebooks for later API/service integration.
 
+## 📑 Research Track Report
+
+The detailed research report required for the **Deep Learning School research track** is available in two versions:
+
+- [Research report in Russian](docs/research_report_ru.md);
+- [Research report in English](docs/research_report_en.md).
+
+The reports summarize the task, metrics, tested architectures, training curves and plots, hypotheses, result analysis, and possible future improvements.
+
 ## ▶️ Demo
 
 ![](./docs/demo.gif)
