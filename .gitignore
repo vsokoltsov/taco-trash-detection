@@ -5,17 +5,67 @@ build/
 dist/
 wheels/
 *.egg-info
+.ipynb_checkpoints/
 
 # Virtual environments
 .venv
+
+# OS/editor files
 .DS_Store
-data/models/
-data/interim/
+.idea/
+.vscode/
+
+# Project data and generated ML artifacts
+data/
+!data/.gitkeep
+*.pt
+*.pth
+*.onnx
+*.engine
+*.torchscript
+*.ckpt
+*.safetensors
+runs/
+checkpoints/
+wandb/
+mlruns/
+
+# Generated presentation/audio/video artifacts
+presentation/
+tts_output/
+*.wav
+*.mp3
+*.mp4
+*.mov
+*.m4a
+*.webm
+
+# Local tool caches
 .rtk/
 .mypy_cache/
 .claude/
-.env
 .ruff_cache/
 .pytest_cache/
+
+# Local env and credentials
+.env
+.env.*
+!.env.example
 gcp.json
-terraform.tfvars
+gha-creds-*.json
+*service-account*.json
+
+# Terraform local files
+**/.terraform/
+**/.terraform.tfstate.lock.info
+**/terraform.tfvars
+**/*.tfvars
+!**/*.tfvars.example
+**/terraform.tfstate
+**/terraform.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
