@@ -53,6 +53,7 @@ resource "google_artifact_registry_repository_iam_member" "github_actions_writer
 resource "google_project_iam_member" "github_actions_deploy_roles" {
   for_each = toset([
     "roles/appengine.deployer",
+    "roles/appengine.serviceAdmin",
     "roles/cloudbuild.builds.editor",
     "roles/container.admin",
     "roles/iam.serviceAccountUser",

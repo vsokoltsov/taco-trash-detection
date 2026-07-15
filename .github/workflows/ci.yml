@@ -137,6 +137,8 @@ jobs:
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: gke-gcloud-auth-plugin
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -199,3 +201,6 @@ jobs:
 
       - name: Deploy UI
         run: gcloud app deploy app.generated.yaml --project "${{ vars.GCP_PROJECT_ID }}" --quiet
+
+      - name: Show UI URL
+        run: gcloud app browse --project "${{ vars.GCP_PROJECT_ID }}" --no-launch-browser
