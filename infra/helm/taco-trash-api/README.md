@@ -2,6 +2,8 @@
 
 This chart deploys only the FastAPI inference service. The Streamlit UI is intended to run on Cloud Run.
 
+By default, the API is exposed through a Kubernetes `LoadBalancer` service. The GitHub Actions deployment waits for the assigned external IP and passes `http://<api-load-balancer-ip>` to the Cloud Run UI as `API_URL`.
+
 Example values for GCS-hosted models:
 
 ```yaml

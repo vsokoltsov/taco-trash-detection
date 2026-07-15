@@ -170,6 +170,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [publish-api-image]
     if: github.event_name == 'push'
+    outputs:
+      api_url: ${{ steps.api-url.outputs.api_url }}
 
     permissions:
       contents: read
@@ -205,7 +207,6 @@ jobs:
           IMAGE_REPOSITORY: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REGISTRY_REPOSITORY }}/${{ env.IMAGE_NAME }}
           IMAGE_TAG: ${{ github.sha }}
           API_GOOGLE_SERVICE_ACCOUNT: ${{ vars.API_GOOGLE_SERVICE_ACCOUNT }}
-          API_INGRESS_IP_NAME: ${{ vars.API_INGRESS_IP_NAME }}
           MODEL_BUCKET_NAME: ${{ vars.MODEL_BUCKET_NAME }}
         run: |
           set -euo pipefail
@@ -220,10 +221,37 @@ jobs:
             --wait \
             --timeout 10m
 
+      - name: Resolve API URL
+        id: api-url
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in {1..60}; do
+            API_HOST="$(
+              kubectl get service taco-trash-api \
+                --namespace "${{ vars.GKE_NAMESPACE }}" \
+                --output jsonpath='{.status.loadBalancer.ingress[0].ip}{.status.loadBalancer.ingress[0].hostname}'
+            )"
+
+            if [ -n "${API_HOST}" ]; then
+              API_URL="http://${API_HOST}"
+              echo "api_url=${API_URL}" >> "${GITHUB_OUTPUT}"
+              echo "API URL: ${API_URL}"
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          echo "API LoadBalancer address was not assigned in time" >&2
+          kubectl get service taco-trash-api --namespace "${{ vars.GKE_NAMESPACE }}" --output wide
+          exit 1
+
   deploy-ui:
     name: Deploy UI to Cloud Run
     runs-on: ubuntu-latest
-    needs: [publish-ui-image]
+    needs: [publish-ui-image, deploy-api]
     if: github.event_name == 'push'
 
     permissions:
@@ -253,7 +281,7 @@ jobs:
             --project "${{ vars.GCP_PROJECT_ID }}" \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "API_URL=${{ vars.API_URL }}" \
+            --set-env-vars "API_URL=${{ needs.deploy-api.outputs.api_url }}" \
             --quiet
 
       - name: Show UI URL

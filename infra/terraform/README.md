@@ -55,9 +55,16 @@ env:
   FAST_RCNN_PATH: gs://<model_bucket_name>/models/fast_rcnn.onnx
 ```
 
-Terraform reserves a global static IP for the API ingress and exports `api_url`.
-If `api_url` is empty in `terraform.tfvars`, GitHub Actions deploys the UI with `http://<reserved-api-ingress-ip>`.
-For production, set `api_url` to a stable HTTPS domain and point that domain to `api_ingress_ip_address`.
+The API is deployed by Helm after Terraform finishes. GitHub Actions exposes it as a Kubernetes `LoadBalancer` service, waits for the assigned external IP, and passes that URL to the Cloud Run UI as `API_URL`.
+
+The old App Engine URL is not used for the Streamlit UI. Use the Cloud Run service URL printed by the `Show UI URL` workflow step or by:
+
+```bash
+gcloud run services describe taco-trash-ui \
+  --region <region> \
+  --project <project_id> \
+  --format='value(status.url)'
+```
 
 ## GitHub Actions deployment
 

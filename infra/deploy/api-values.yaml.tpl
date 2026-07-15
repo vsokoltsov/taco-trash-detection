@@ -8,10 +8,11 @@ serviceAccount:
   annotations:
     iam.gke.io/gcp-service-account: "${API_GOOGLE_SERVICE_ACCOUNT}"
 
+service:
+  type: LoadBalancer
+
 ingress:
-  enabled: true
-  annotations:
-    kubernetes.io/ingress.global-static-ip-name: "${API_INGRESS_IP_NAME}"
+  enabled: false
 
 env:
   STORAGE: "gcp"
