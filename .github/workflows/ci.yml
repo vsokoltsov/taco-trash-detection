@@ -9,10 +9,6 @@ on:
 
 env:
   IMAGE_NAME: taco-trash-api
-  MASK_RCNN_V1_GDRIVE_URL: "https://drive.google.com/file/d/1HBo9xJXSTkQkAHKrbgHFptVtZg-0kBB4/view?usp=sharing"
-  YOLO_V8_GDRIVE_URL: "https://drive.google.com/file/d/19q4FulQTz2rot074mA8R537CAREDtRz1/view?usp=sharing"
-  YOLO_V11_TOP5_GDRIVE_URL: "https://drive.google.com/file/d/13irdQZQC0VzpL88_QGGx2oir-gSUbaC6/view?usp=sharing"
-  FAST_RCNN_GDRIVE_URL: "https://drive.google.com/file/d/15xL2DHPSqn-tkssJg10sMvoFMTPJX9Ry/view?usp=sharing"
 
 jobs:
   lint:
@@ -119,62 +115,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  sync-models:
-    name: Sync model artifacts to Cloud Storage
-    runs-on: ubuntu-latest
-    needs: [test]
-    if: github.event_name == 'push'
-
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Install Google Drive downloader
-        run: python -m pip install --upgrade gdown
-
-      - name: Download and upload models
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          mkdir -p models
-
-          sync_model() {
-            local url="$1"
-            local filename="$2"
-            local destination="gs://${{ vars.MODEL_BUCKET_NAME }}/models/${filename}"
-
-            if gcloud storage ls "${destination}" >/dev/null 2>&1; then
-              echo "Model already exists: ${destination}"
-              return
-            fi
-
-            echo "Downloading ${filename}"
-            gdown --fuzzy "${url}" -O "models/${filename}"
-
-            echo "Uploading ${filename} to ${destination}"
-            gcloud storage cp "models/${filename}" "${destination}"
-          }
-
-          sync_model "${MASK_RCNN_V1_GDRIVE_URL}" "mask_rcnn_v1.pt"
-          sync_model "${YOLO_V8_GDRIVE_URL}" "yolo_v8.onnx"
-          sync_model "${YOLO_V11_TOP5_GDRIVE_URL}" "yolo_v11_top5.onnx"
-          sync_model "${FAST_RCNN_GDRIVE_URL}" "fast_rcnn.onnx"
-
   deploy-api:
     name: Deploy API to GKE
     runs-on: ubuntu-latest
-    needs: [publish-api-image, sync-models]
+    needs: [publish-api-image]
     if: github.event_name == 'push'
 
     permissions:
@@ -205,47 +149,29 @@ jobs:
 
       - name: Deploy API Helm release
         shell: bash
+        env:
+          IMAGE_REPOSITORY: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REGISTRY_REPOSITORY }}/${{ env.IMAGE_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+          API_GOOGLE_SERVICE_ACCOUNT: ${{ vars.API_GOOGLE_SERVICE_ACCOUNT }}
+          API_INGRESS_IP_NAME: ${{ vars.API_INGRESS_IP_NAME }}
+          MODEL_BUCKET_NAME: ${{ vars.MODEL_BUCKET_NAME }}
         run: |
           set -euo pipefail
 
-          IMAGE_REPOSITORY="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REGISTRY_REPOSITORY }}/${IMAGE_NAME}"
-
-          cat > deploy-values.yaml <<EOF
-          image:
-            repository: "${IMAGE_REPOSITORY}"
-            tag: "${GITHUB_SHA}"
-
-          serviceAccount:
-            create: true
-            name: "taco-trash-api"
-            annotations:
-              iam.gke.io/gcp-service-account: "${{ vars.API_GOOGLE_SERVICE_ACCOUNT }}"
-
-          ingress:
-            enabled: true
-            annotations:
-              kubernetes.io/ingress.global-static-ip-name: "${{ vars.API_INGRESS_IP_NAME }}"
-
-          env:
-            STORAGE: "gcp"
-            USE_GPU: "false"
-            MASK_RCNN_V1_PATH: "gs://${{ vars.MODEL_BUCKET_NAME }}/models/mask_rcnn_v1.pt"
-            YOLO_V8_PATH: "gs://${{ vars.MODEL_BUCKET_NAME }}/models/yolo_v8.onnx"
-            YOLO_V11_TOP5_PATH: "gs://${{ vars.MODEL_BUCKET_NAME }}/models/yolo_v11_top5.onnx"
-            FAST_RCNN_PATH: "gs://${{ vars.MODEL_BUCKET_NAME }}/models/fast_rcnn.onnx"
-          EOF
+          DEPLOY_VALUES="${RUNNER_TEMP}/api-values.yaml"
+          envsubst < infra/deploy/api-values.yaml.tpl > "${DEPLOY_VALUES}"
 
           helm upgrade --install taco-trash-api infra/helm/taco-trash-api \
             --namespace "${{ vars.GKE_NAMESPACE }}" \
             --create-namespace \
-            --values deploy-values.yaml \
+            --values "${DEPLOY_VALUES}" \
             --wait \
             --timeout 10m
 
   deploy-ui:
     name: Deploy UI to App Engine
     runs-on: ubuntu-latest
-    needs: [publish-api-image, sync-models]
+    needs: [publish-api-image]
     if: github.event_name == 'push'
 
     permissions:
@@ -266,17 +192,10 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Generate App Engine config
+        env:
+          API_URL: ${{ vars.API_URL }}
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          app_yaml = Path("app.yaml").read_text()
-          app_yaml = app_yaml.replace(
-              "https://REPLACE_WITH_API_INGRESS_URL",
-              "${{ vars.API_URL }}",
-          )
-          Path("app.generated.yaml").write_text(app_yaml)
-          PY
+          envsubst < infra/deploy/app.yaml.tpl > app.generated.yaml
 
       - name: Deploy UI
         run: gcloud app deploy app.generated.yaml --project "${{ vars.GCP_PROJECT_ID }}" --quiet
