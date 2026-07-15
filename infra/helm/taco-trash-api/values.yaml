@@ -1,0 +1,80 @@
+replicaCount: 1
+
+image:
+  repository: europe-west1-docker.pkg.dev/PROJECT_ID/taco-trash/taco-trash-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: taco-trash-api
+  annotations: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: gce
+  annotations: {}
+  hosts:
+    - host: ""
+      paths:
+        - path: /*
+          pathType: ImplementationSpecific
+  tls: []
+
+env:
+  STORAGE: gcp
+  USE_GPU: "false"
+  MASK_RCNN_V1_PATH: ""
+  YOLO_V8_PATH: ""
+  YOLO_V11_TOP5_PATH: ""
+  FAST_RCNN_PATH: ""
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "2"
+    memory: "6Gi"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+probes:
+  readiness:
+    path: /health
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  liveness:
+    path: /health
+    initialDelaySeconds: 60
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3

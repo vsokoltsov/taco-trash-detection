@@ -1,0 +1,6 @@
+apiVersion: v2
+name: taco-trash-api
+description: FastAPI inference service for TACO trash detection models.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
