@@ -1,6 +1,6 @@
 runtime: python312
 service: default
-entrypoint: streamlit run trash_annotation/ui.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+entrypoint: streamlit run trash_annotation/ui.py --server.port=8080 --server.address=0.0.0.0 --server.headless=true
 
 instance_class: F2
 
