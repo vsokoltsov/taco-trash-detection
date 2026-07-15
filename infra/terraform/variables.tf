@@ -94,7 +94,13 @@ variable "configure_github_actions_variables" {
 }
 
 variable "api_url" {
-  description = "Public API URL used by the Streamlit App Engine UI. If empty, Terraform uses the reserved API ingress IP."
+  description = "Public API URL used by the Streamlit UI. If empty, Terraform uses the reserved API ingress IP."
   type        = string
   default     = ""
+}
+
+variable "cloud_run_ui_service_name" {
+  description = "Cloud Run service name for the Streamlit UI."
+  type        = string
+  default     = "taco-trash-ui"
 }

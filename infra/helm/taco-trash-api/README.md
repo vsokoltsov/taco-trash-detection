@@ -1,6 +1,6 @@
 # taco-trash-api Helm chart
 
-This chart deploys only the FastAPI inference service. The Streamlit UI is intended to run on Google App Engine.
+This chart deploys only the FastAPI inference service. The Streamlit UI is intended to run on Cloud Run.
 
 Example values for GCS-hosted models:
 

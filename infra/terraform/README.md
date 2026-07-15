@@ -9,9 +9,9 @@ This directory provisions the GCP infrastructure needed by the project:
 - Cloud Storage bucket for ONNX model files;
 - Google service accounts and Workload Identity binding for API pods;
 - GitHub Actions Workload Identity for Docker image publishing;
-- App Engine application initialization for the Streamlit UI.
+- Cloud Run API enablement for the Streamlit UI deployment.
 
-Terraform intentionally does **not** deploy Helm releases and does **not** deploy the App Engine service.
+Terraform intentionally does **not** deploy Helm releases and does **not** deploy the Cloud Run UI service.
 
 Typical manual flow:
 
@@ -61,7 +61,7 @@ For production, set `api_url` to a stable HTTPS domain and point that domain to 
 
 ## GitHub Actions deployment
 
-The `ci_identity` module creates a dedicated Google service account for GitHub Actions and grants it permissions to publish the Docker image, deploy the API to GKE, and deploy the Streamlit UI to App Engine.
+The `ci_identity` module creates a dedicated Google service account for GitHub Actions and grants it permissions to publish Docker images, deploy the API to GKE, and deploy the Streamlit UI to Cloud Run.
 
 The workflow `.github/workflows/ci.yml` runs lint, type checks, tests, publishes the API image, and deploys the API/UI on every push to an allowed branch.
 

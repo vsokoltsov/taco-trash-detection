@@ -103,6 +103,7 @@ module "github_repository_config" {
     API_INGRESS_IP_NAME            = module.network.api_ingress_ip_name
     MODEL_BUCKET_NAME              = module.model_bucket.bucket_name
     API_URL                        = local.api_url
+    CLOUD_RUN_UI_SERVICE_NAME      = var.cloud_run_ui_service_name
   }
 }
 

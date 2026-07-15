@@ -27,3 +27,5 @@ configure_github_actions_variables = true
 # Optional. Leave empty to use "http://<reserved-api-ingress-ip>".
 # Prefer a custom HTTPS domain for production.
 api_url = ""
+
+cloud_run_ui_service_name = "taco-trash-ui"
