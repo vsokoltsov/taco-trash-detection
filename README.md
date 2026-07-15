@@ -2,6 +2,22 @@
 
 [![CI](https://github.com/vsokoltsov/taco-trash-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/vsokoltsov/taco-trash-detection/actions/workflows/ci.yml)
 
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![ONNX Runtime](https://img.shields.io/badge/ONNX%20Runtime-Inference-005CED?logo=onnx&logoColor=white)](https://onnxruntime.ai/)
+[![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Platform-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/)
+[![GKE](https://img.shields.io/badge/GKE-Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://cloud.google.com/kubernetes-engine)
+[![Cloud Run](https://img.shields.io/badge/Cloud%20Run-UI-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+[![Cloud Storage](https://img.shields.io/badge/Cloud%20Storage-Models-AECBFA?logo=googlecloud&logoColor=black)](https://cloud.google.com/storage)
+[![Terraform](https://img.shields.io/badge/Terraform-IaC-844FBA?logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![Helm](https://img.shields.io/badge/Helm-Charts-0F1689?logo=helm&logoColor=white)](https://helm.sh/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI%2FCD-2088FF?logo=githubactions&logoColor=white)](https://github.com/features/actions)
+[![uv](https://img.shields.io/badge/uv-Package%20Manager-DE5FE9)](https://docs.astral.sh/uv/)
+[![Ruff](https://img.shields.io/badge/Ruff-Lint-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
+[![pytest](https://img.shields.io/badge/pytest-Tests-0A9EDC?logo=pytest&logoColor=white)](https://docs.pytest.org/)
+
 This project explores trash and litter detection using the [TACO dataset](https://github.com/pedropro/TACO) and instance detection/segmentation models.
 
 The work is implemented primarily in Jupyter notebooks and focuses on evaluating how well different model and label configurations detect litter in real-world images.
@@ -44,6 +60,8 @@ The detailed research report required for the **Deep Learning School research tr
 The reports summarize the task, metrics, tested architectures, training curves and plots, hypotheses, result analysis, and possible future improvements.
 
 ## ▶️ Demo
+
+* https://taco-trash-ui-riccx6oj7q-ew.a.run.app/
 
 ![](./docs/demo.gif)
 
