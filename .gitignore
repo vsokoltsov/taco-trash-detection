@@ -39,6 +39,7 @@ tts_output/
 *.mov
 *.m4a
 *.webm
+app.generated.yaml
 
 # Local tool caches
 .rtk/
