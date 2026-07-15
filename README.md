@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/vsokoltsov/taco-trash-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/vsokoltsov/taco-trash-detection/actions/workflows/ci.yml)
 
+![](./docs/cover.png)
+
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
@@ -36,6 +38,8 @@ This repository was prepared as the final project for the [Deep Learning School]
 - [Torchvision Faster R-CNN](https://docs.pytorch.org/vision/main/models/faster_rcnn.html)
 
 ## ❓ Problem Statement
+
+![](./docs/infographic.png)
 
 Litter and pollution are worldwide environmental problems. Trash objects in real scenes are often small, occluded, deformed, transparent, dirty, or visually similar to the background. This makes detection in uncontrolled environments harder than detecting clean, isolated recyclable objects.
 
@@ -232,6 +236,67 @@ The comparison should be interpreted with some caution because the models use di
 | YOLOv8m, final continuation | **0.327** |
 
 ---
+
+## 🏗️ Project structure
+
+```
+.                                                       <- project root with application code,
+  notebooks, docs, and deployment configuration
+  ├── docs                                                <- research reports, presentation/
+  report assets, and generated documentation material
+  │   └── plots                                           <- plots exported from experiments and
+  reports
+  ├── infra                                               <- infrastructure-as-code and
+  deployment configuration
+  │   ├── appengine                                       <- legacy App Engine deployment notes/
+  configuration
+  │   ├── cloudrun                                        <- Cloud Run deployment notes for the
+  Streamlit UI
+  │   ├── deploy                                          <- deployment value templates used by
+  CI/CD
+  │   ├── helm                                            <- Helm charts for Kubernetes services
+  │   │   └── taco-trash-api                              <- Helm chart for the FastAPI
+  inference API
+  │   │       └── templates                               <- Kubernetes resource templates
+  rendered by Helm
+  │   └── terraform                                       <- Terraform root module for GCP
+  infrastructure
+  │       └── modules                                     <- reusable Terraform modules
+  │           ├── app_engine                              <- App Engine-related infrastructure
+  module
+  │           ├── artifact_registry                       <- Docker image registry resources
+  │           ├── ci_identity                             <- GitHub Actions Workload Identity
+  and CI service account
+  │           ├── github_repository_config                <- GitHub repository variables/
+  configuration
+  │           ├── gke                                     <- Google Kubernetes Engine cluster
+  resources
+  │           ├── network                                 <- VPC, subnet, and networking
+  resources
+  │           ├── project_services                        <- required GCP API enablement
+  │           ├── runtime_identity                        <- runtime service accounts and
+  workload identity bindings
+  │           └── storage_bucket                          <- Cloud Storage bucket for model
+  artifacts
+  ├── models                                              <- local model artifact location
+  ├── notebooks                                           <- research, training, evaluation,
+  export, and inference notebooks
+  └── trash_annotation                                    <- main Python package for API, UI,
+  settings, and inference code
+      ├── models                                          <- model-specific inference
+      implementations
+      │   ├── fast_rcnn                                   <- Faster R-CNN ONNX inference code
+      │   ├── mask_rcnn_v1                                <- Mask R-CNN v1 inference code
+      │   └── yolo_v8                                     <- YOLO ONNX inference code
+      └── tests                                           <- automated tests for application and
+      model inference code
+          └── models                                      <- model-specific test suites
+              ├── fast_rcnn                               <- Faster R-CNN inference tests
+              ├── mask_rcnn_v1                            <- Mask R-CNN v1 inference tests
+              └── yolo_v8                                 <- YOLO inference tests
+```
+
+--
 
 ## 🌐 API
 
