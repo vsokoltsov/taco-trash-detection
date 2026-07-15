@@ -1,4 +1,5 @@
 import io
+import os
 
 from PIL import Image
 import requests
@@ -13,7 +14,7 @@ st.set_page_config(
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.title("⚙️ Settings")
-    api_url = st.text_input("API URL", value="http://api:8000")
+    api_url = st.text_input("API URL", value=os.getenv("API_URL", "http://api:8000"))
     model_name = st.selectbox(
         "Model",
         options=["mask_rcnn_v1", "yolo_v8", "yolo_v11_top5", "fast_rcnn"],

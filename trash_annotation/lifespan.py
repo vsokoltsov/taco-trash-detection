@@ -13,7 +13,7 @@ from trash_annotation.models.fast_rcnn.inference import FastRcnnDetector
 from trash_annotation.models.mask_rcnn_v1.inference import MaskRcnnDetector
 from trash_annotation.models.yolo_v8.inference import YoloDetector, YoloV11Top5Detector
 from trash_annotation.settings import Settings, get_settings
-from trash_annotation.storage import GDriveStorage
+from trash_annotation.storage import GCSStorage, GDriveStorage, StorageEnum
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings: Settings = get_settings()
-    storage = GDriveStorage()
+    storage = GCSStorage() if settings.STORAGE == StorageEnum.GCP else GDriveStorage()
     detectors: dict[ModelName, Detector] = {}
 
     if settings.MASK_RCNN_V1_PATH:
