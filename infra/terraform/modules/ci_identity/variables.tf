@@ -27,3 +27,8 @@ variable "repository_region" {
   description = "Artifact Registry repository location."
   type        = string
 }
+
+variable "model_bucket_name" {
+  description = "Cloud Storage bucket used for model artifacts."
+  type        = string
+}

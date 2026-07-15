@@ -92,3 +92,9 @@ variable "configure_github_actions_variables" {
   type        = bool
   default     = true
 }
+
+variable "api_url" {
+  description = "Public API URL used by the Streamlit App Engine UI. If empty, Terraform uses the reserved API ingress IP."
+  type        = string
+  default     = ""
+}

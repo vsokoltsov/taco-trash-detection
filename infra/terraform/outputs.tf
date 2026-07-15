@@ -23,6 +23,21 @@ output "gke_location" {
   value       = module.gke.location
 }
 
+output "api_ingress_ip_name" {
+  description = "Reserved global static IP name used by GKE ingress."
+  value       = module.network.api_ingress_ip_name
+}
+
+output "api_ingress_ip_address" {
+  description = "Reserved global static IP address used by GKE ingress."
+  value       = module.network.api_ingress_ip_address
+}
+
+output "api_url" {
+  description = "API URL passed to the App Engine UI."
+  value       = local.api_url
+}
+
 output "api_google_service_account_email" {
   description = "Google service account to annotate on the Helm Kubernetes service account."
   value       = module.runtime_identity.api_service_account_email

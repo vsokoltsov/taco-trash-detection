@@ -19,3 +19,7 @@ resource "google_compute_subnetwork" "main" {
     ip_cidr_range = var.services_cidr
   }
 }
+
+resource "google_compute_global_address" "api_ingress" {
+  name = "${var.name_prefix}-api-ingress-ip"
+}

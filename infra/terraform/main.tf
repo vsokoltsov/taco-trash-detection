@@ -1,6 +1,7 @@
 locals {
   resource_prefix   = "${var.name_prefix}-${var.environment}"
   model_bucket_name = var.model_bucket_name != "" ? var.model_bucket_name : "${var.project_id}-${var.name_prefix}-models"
+  api_url           = var.api_url != "" ? var.api_url : "http://${module.network.api_ingress_ip_address}"
   github_repo_parts = split("/", var.github_repository)
   github_owner      = local.github_repo_parts[0]
   github_repo_name  = local.github_repo_parts[1]
@@ -82,6 +83,7 @@ module "ci_identity" {
   github_branches   = var.github_deploy_branches
   repository_name   = module.artifact_registry.repository_name
   repository_region = var.region
+  model_bucket_name = module.model_bucket.bucket_name
 }
 
 module "github_repository_config" {
@@ -95,6 +97,13 @@ module "github_repository_config" {
     ARTIFACT_REGISTRY_REPOSITORY   = module.artifact_registry.repository_name
     GCP_WORKLOAD_IDENTITY_PROVIDER = module.ci_identity.workload_identity_provider_name
     GCP_SERVICE_ACCOUNT            = module.ci_identity.service_account_email
+    GKE_CLUSTER_NAME               = module.gke.cluster_name
+    GKE_LOCATION                   = module.gke.location
+    GKE_NAMESPACE                  = var.gke_namespace
+    API_GOOGLE_SERVICE_ACCOUNT     = module.runtime_identity.api_service_account_email
+    API_INGRESS_IP_NAME            = module.network.api_ingress_ip_name
+    MODEL_BUCKET_NAME              = module.model_bucket.bucket_name
+    API_URL                        = local.api_url
   }
 }
 

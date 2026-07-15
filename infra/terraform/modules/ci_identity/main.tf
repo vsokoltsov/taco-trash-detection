@@ -49,3 +49,23 @@ resource "google_artifact_registry_repository_iam_member" "github_actions_writer
   role       = "roles/artifactregistry.writer"
   member     = "serviceAccount:${google_service_account.github_actions.email}"
 }
+
+resource "google_storage_bucket_iam_member" "github_actions_model_writer" {
+  bucket = var.model_bucket_name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+resource "google_project_iam_member" "github_actions_deploy_roles" {
+  for_each = toset([
+    "roles/appengine.deployer",
+    "roles/cloudbuild.builds.editor",
+    "roles/container.admin",
+    "roles/iam.serviceAccountUser",
+    "roles/storage.admin",
+  ])
+
+  project = var.project_id
+  role    = each.value
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}

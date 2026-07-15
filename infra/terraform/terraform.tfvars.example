@@ -23,3 +23,7 @@ github_deploy_branches = ["main", "master"]
 
 # Requires GITHUB_TOKEN in the environment when running Terraform.
 configure_github_actions_variables = true
+
+# Optional. Leave empty to use "http://<reserved-api-ingress-ip>".
+# Prefer a custom HTTPS domain for production.
+api_url = ""

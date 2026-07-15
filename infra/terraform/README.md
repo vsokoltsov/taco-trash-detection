@@ -22,10 +22,13 @@ terraform plan -var-file=terraform.tfvars
 terraform apply -var-file=terraform.tfvars
 ```
 
-Upload models to the bucket:
+The CI workflow uploads models from Google Drive to the bucket automatically. For a manual upload:
 
 ```bash
-gsutil cp models/*.onnx gs://<model_bucket_name>/models/
+gsutil cp models/mask_rcnn_v1.pt gs://<model_bucket_name>/models/mask_rcnn_v1.pt
+gsutil cp models/yolo_v8.onnx gs://<model_bucket_name>/models/yolo_v8.onnx
+gsutil cp models/yolo_v11_top5.onnx gs://<model_bucket_name>/models/yolo_v11_top5.onnx
+gsutil cp models/fast_rcnn.onnx gs://<model_bucket_name>/models/fast_rcnn.onnx
 ```
 
 Build and push the API image:
@@ -46,17 +49,21 @@ serviceAccount:
 
 env:
   STORAGE: gcp
-  MASK_RCNN_V1_PATH: gs://<model_bucket_name>/models/mask_rcnn_v1.onnx
+  MASK_RCNN_V1_PATH: gs://<model_bucket_name>/models/mask_rcnn_v1.pt
   YOLO_V8_PATH: gs://<model_bucket_name>/models/yolo_v8.onnx
   YOLO_V11_TOP5_PATH: gs://<model_bucket_name>/models/yolo_v11_top5.onnx
   FAST_RCNN_PATH: gs://<model_bucket_name>/models/fast_rcnn.onnx
 ```
 
-## GitHub Actions image publishing
+Terraform reserves a global static IP for the API ingress and exports `api_url`.
+If `api_url` is empty in `terraform.tfvars`, GitHub Actions deploys the UI with `http://<reserved-api-ingress-ip>`.
+For production, set `api_url` to a stable HTTPS domain and point that domain to `api_ingress_ip_address`.
 
-The `ci_identity` module creates a dedicated Google service account for GitHub Actions and grants it `roles/artifactregistry.writer` on the Docker repository only.
+## GitHub Actions deployment
 
-The workflow `.github/workflows/publish-api-image.yml` runs on every push to `master` and pushes:
+The `ci_identity` module creates a dedicated Google service account for GitHub Actions and grants it permissions to publish the Docker image, upload model artifacts, deploy the API to GKE, and deploy the Streamlit UI to App Engine.
+
+The workflow `.github/workflows/ci.yml` runs lint, type checks, tests, publishes the API image, syncs model artifacts, and deploys the API/UI on every push to an allowed branch.
 
 - `<region>-docker.pkg.dev/<project_id>/<repo>/taco-trash-api:<commit-sha>`;
 - `<region>-docker.pkg.dev/<project_id>/<repo>/taco-trash-api:latest`.
