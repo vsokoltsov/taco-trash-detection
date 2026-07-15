@@ -83,7 +83,6 @@ module "ci_identity" {
   github_branches   = var.github_deploy_branches
   repository_name   = module.artifact_registry.repository_name
   repository_region = var.region
-  model_bucket_name = module.model_bucket.bucket_name
 }
 
 module "github_repository_config" {

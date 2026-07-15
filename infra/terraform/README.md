@@ -22,7 +22,7 @@ terraform plan -var-file=terraform.tfvars
 terraform apply -var-file=terraform.tfvars
 ```
 
-The CI workflow uploads models from Google Drive to the bucket automatically. For a manual upload:
+Upload models to the bucket before deploying the API:
 
 ```bash
 gsutil cp models/mask_rcnn_v1.pt gs://<model_bucket_name>/models/mask_rcnn_v1.pt
@@ -61,9 +61,9 @@ For production, set `api_url` to a stable HTTPS domain and point that domain to 
 
 ## GitHub Actions deployment
 
-The `ci_identity` module creates a dedicated Google service account for GitHub Actions and grants it permissions to publish the Docker image, upload model artifacts, deploy the API to GKE, and deploy the Streamlit UI to App Engine.
+The `ci_identity` module creates a dedicated Google service account for GitHub Actions and grants it permissions to publish the Docker image, deploy the API to GKE, and deploy the Streamlit UI to App Engine.
 
-The workflow `.github/workflows/ci.yml` runs lint, type checks, tests, publishes the API image, syncs model artifacts, and deploys the API/UI on every push to an allowed branch.
+The workflow `.github/workflows/ci.yml` runs lint, type checks, tests, publishes the API image, and deploys the API/UI on every push to an allowed branch.
 
 - `<region>-docker.pkg.dev/<project_id>/<repo>/taco-trash-api:<commit-sha>`;
 - `<region>-docker.pkg.dev/<project_id>/<repo>/taco-trash-api:latest`.
