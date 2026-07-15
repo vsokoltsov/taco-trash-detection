@@ -17,3 +17,4 @@ data/interim/
 .env
 .ruff_cache/
 .pytest_cache/
+gcp.json
