@@ -67,6 +67,8 @@ The reports summarize the task, metrics, tested architectures, training curves a
 
 * https://taco-trash-ui-riccx6oj7q-ew.a.run.app/
 
+> **Note:** The deployed application may be unavailable because the cloud infrastructure can be stopped or destroyed to avoid ongoing GCP costs. The project can still be run locally with Docker Compose using the instructions below.
+
 ![](./docs/demo.gif)
 
 ## 🗂️ Dataset
