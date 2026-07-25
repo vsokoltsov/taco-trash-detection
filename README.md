@@ -300,6 +300,81 @@ The comparison should be interpreted with some caution because the models use di
 
 --
 
+## 📈 Diagram
+
+```mermaid
+flowchart TB
+      User["User"] --> UI["Streamlit UI<br/>Cloud Run / local Docker"]
+
+      UI -->|"Upload image + select model"| API["FastAPI Inference Service<br/>GKE / local Docker"]
+
+      API --> Settings["Application Settings<br/>model paths, storage backend, runtime flags"]
+
+      Settings --> StorageChoice{"Storage backend"}
+
+      StorageChoice -->|"gcp"| GCS["Google Cloud Storage<br/>model artifacts"]
+      StorageChoice -->|"gdrive"| GDrive["Google Drive<br/>model artifacts"]
+      StorageChoice -->|"local"| LocalModels["Local models directory"]
+
+      GCS --> ModelLoader["Model Loader"]
+      GDrive --> ModelLoader
+      LocalModels --> ModelLoader
+
+      ModelLoader --> Runtime["ONNX Runtime<br/>CPU / GPU providers"]
+
+      API --> ModelChoice{"Selected model"}
+
+      ModelChoice --> MaskRCNN["Mask R-CNN v1<br/>detection + segmentation"]
+      ModelChoice --> FasterRCNN["Faster R-CNN<br/>bbox detection"]
+      ModelChoice --> YOLOv8["YOLOv8m<br/>bbox detection"]
+      ModelChoice --> YOLO11["YOLO11l top-5<br/>bbox detection"]
+
+      MaskRCNN --> Runtime
+      FasterRCNN --> Runtime
+      YOLOv8 --> Runtime
+      YOLO11 --> Runtime
+
+      Runtime --> Predictions["Predictions<br/>boxes, labels, scores, masks if available"]
+
+      Predictions --> API
+      API -->|"JSON predictions"| UI
+      API -->|"Annotated image"| UI
+
+      UI --> Result["Rendered result<br/>image with detections / masks"]
+
+      subgraph Research["Research Pipeline"]
+          Notebooks["Jupyter Notebooks"] --> Training["Training + evaluation"]
+          Training --> Exports["ONNX export"]
+          Exports --> GCS
+          Reports["Research reports<br/>RU / EN"] --> Docs["docs/"]
+          Training --> Metrics["CSV metrics + plots"]
+          Metrics --> Reports
+      end
+
+      subgraph CI_CD["CI/CD"]
+          GitHub["GitHub Repository"] --> Actions["GitHub Actions"]
+          Actions --> Tests["Lint + typecheck + tests"]
+          Tests --> BuildAPI["Build API Docker image"]
+          Tests --> BuildUI["Build UI Docker image"]
+          BuildAPI --> ArtifactRegistry["Artifact Registry"]
+          BuildUI --> ArtifactRegistry
+          ArtifactRegistry --> DeployAPI["Helm deploy API to GKE"]
+          ArtifactRegistry --> DeployUI["Deploy UI to Cloud Run"]
+          DeployAPI --> API
+          DeployUI --> UI
+      end
+
+      subgraph Infrastructure["Infrastructure"]
+          Terraform["Terraform"] --> GCP["Google Cloud Platform"]
+          Terraform --> GKE["Google Kubernetes Engine"]
+          Terraform --> CloudRun["Cloud Run"]
+          Terraform --> Bucket["Cloud Storage bucket"]
+          Terraform --> Registry["Artifact Registry"]
+          Terraform --> IAM["IAM + Workload Identity"]
+          Helm["Helm Chart"] --> GKE
+      end
+```
+
 ## 🌐 API
 
 The detection service exposes two endpoints served by FastAPI + ONNX Runtime.
