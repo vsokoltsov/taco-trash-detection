@@ -19,11 +19,11 @@ model_bucket_force_destroy = true
 app_engine_location_id          = "europe-west"
 create_app_engine_application   = true
 
-github_repository    = "vsokoltsov/taco-trash-detection"
+github_repository      = "vsokoltsov/taco-trash-detection"
 github_deploy_branches = ["main", "master"]
 
-# Requires GITHUB_TOKEN in the environment when running Terraform.
-configure_github_actions_variables = true
+# Set to true only if GITHUB_TOKEN has repository Actions variables read/write access.
+configure_github_actions_variables = false
 
 # Optional. Leave empty to use "http://<reserved-api-ingress-ip>".
 # Prefer a custom HTTPS domain for production.

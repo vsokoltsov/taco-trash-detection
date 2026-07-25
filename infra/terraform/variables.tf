@@ -96,7 +96,7 @@ variable "github_deploy_branches" {
 variable "configure_github_actions_variables" {
   description = "Whether Terraform should create GitHub Actions repository variables for image publishing."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "api_url" {

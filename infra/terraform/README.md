@@ -43,11 +43,13 @@ The cleanup script also removes the App Engine application from Terraform state.
 
 The model bucket is configured with `model_bucket_force_destroy = true` by default so Terraform can delete uploaded model artifacts during destroy.
 
-If `configure_github_actions_variables = true`, export a GitHub token before destroy as well. Terraform needs it to delete repository variables managed by the GitHub provider:
+If `configure_github_actions_variables = true`, Terraform normally needs a GitHub token to delete repository variables managed by the GitHub provider:
 
 ```bash
 export GITHUB_TOKEN=<token-with-repository-actions-variable-permissions>
 ```
+
+If the token is unavailable or returns `403 Resource not accessible by personal access token`, run `destroy_cleanup.sh` first. The script removes GitHub repository-variable resources from Terraform state so GCP infrastructure destruction is not blocked by GitHub API permissions. This does not delete the variables from GitHub; delete them manually in the repository settings if needed.
 
 Upload models to the bucket before deploying the API:
 
@@ -102,7 +104,7 @@ The workflow `.github/workflows/ci.yml` runs lint, type checks, tests, publishes
 - `<region>-docker.pkg.dev/<project_id>/<repo>/taco-trash-api:<commit-sha>`;
 - `<region>-docker.pkg.dev/<project_id>/<repo>/taco-trash-api:latest`.
 
-Terraform can create these GitHub repository variables automatically through the `github_repository_config` module:
+Terraform can create these GitHub repository variables automatically through the `github_repository_config` module, but this is disabled by default so GCP infrastructure can be applied without GitHub API permissions:
 
 | GitHub variable | Value |
 |:--|:--|
@@ -112,17 +114,29 @@ Terraform can create these GitHub repository variables automatically through the
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | `github_actions_workload_identity_provider` output |
 | `GCP_SERVICE_ACCOUNT` | `github_actions_service_account_email` output |
 
-To allow Terraform to update repository variables, export a GitHub token before running Terraform:
+For a normal GCP-only apply, keep this value disabled:
+
+```hcl
+configure_github_actions_variables = false
+```
+
+If you want Terraform to manage GitHub Actions repository variables too, enable it and export a GitHub token before running Terraform:
 
 ```bash
 export GITHUB_TOKEN=<token-with-repository-actions-variable-permissions>
 ```
 
-Set this flag to disable GitHub repository variable management:
-
 ```hcl
-configure_github_actions_variables = false
+configure_github_actions_variables = true
 ```
+
+If a previous apply already added `module.github_repository_config` resources to Terraform state and you now receive `403 Resource not accessible by personal access token`, either provide a token with Actions variables access or stop managing those resources:
+
+```bash
+./detach_github_repository_config.sh
+```
+
+Then run apply with `configure_github_actions_variables = false`.
 
 The Workload Identity Provider is restricted to the configured repository and branch:
 
