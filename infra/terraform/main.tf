@@ -34,8 +34,9 @@ module "artifact_registry" {
 module "model_bucket" {
   source = "./modules/storage_bucket"
 
-  bucket_name = local.model_bucket_name
-  region      = var.region
+  bucket_name   = local.model_bucket_name
+  region        = var.region
+  force_destroy = var.model_bucket_force_destroy
 
   depends_on = [module.project_services]
 }

@@ -63,6 +63,12 @@ variable "model_bucket_name" {
   default     = ""
 }
 
+variable "model_bucket_force_destroy" {
+  description = "Whether Terraform may delete the model bucket even when it contains uploaded model artifacts."
+  type        = bool
+  default     = true
+}
+
 variable "app_engine_location_id" {
   description = "App Engine location id. App Engine apps cannot be moved after creation."
   type        = string

@@ -22,6 +22,33 @@ terraform plan -var-file=terraform.tfvars
 terraform apply -var-file=terraform.tfvars
 ```
 
+## Destroying infrastructure
+
+Some runtime resources are created by deployment tooling rather than Terraform:
+
+- the API Helm release in GKE;
+- the Kubernetes `LoadBalancer` service and its GCP forwarding-rule resources;
+- the Streamlit UI Cloud Run service.
+
+Clean those resources before `terraform destroy`:
+
+```bash
+cd infra/terraform
+chmod +x destroy_cleanup.sh
+PROJECT_ID=<project_id> ./destroy_cleanup.sh
+terraform destroy -var-file=terraform.tfvars
+```
+
+The cleanup script also removes the App Engine application from Terraform state. App Engine applications cannot be deleted from a GCP project, so Terraform must not try to destroy that resource directly.
+
+The model bucket is configured with `model_bucket_force_destroy = true` by default so Terraform can delete uploaded model artifacts during destroy.
+
+If `configure_github_actions_variables = true`, export a GitHub token before destroy as well. Terraform needs it to delete repository variables managed by the GitHub provider:
+
+```bash
+export GITHUB_TOKEN=<token-with-repository-actions-variable-permissions>
+```
+
 Upload models to the bucket before deploying the API:
 
 ```bash

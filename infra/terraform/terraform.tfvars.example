@@ -12,7 +12,8 @@ gke_min_node_count       = 1
 gke_max_node_count       = 3
 
 # Leave empty to use "<project_id>-taco-trash-models".
-model_bucket_name = ""
+model_bucket_name          = ""
+model_bucket_force_destroy = true
 
 # App Engine location cannot be changed after creation.
 app_engine_location_id          = "europe-west"

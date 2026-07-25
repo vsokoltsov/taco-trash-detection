@@ -2,7 +2,7 @@ resource "google_storage_bucket" "models" {
   name                        = var.bucket_name
   location                    = var.region
   uniform_bucket_level_access = true
-  force_destroy               = false
+  force_destroy               = var.force_destroy
 
   versioning {
     enabled = true
